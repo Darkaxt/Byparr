@@ -1,5 +1,11 @@
 # Byparr [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github-sponsors)](https://github.com/sponsors/ThePhaseless)
 
+This is Darkaxt's `custom-post` fork. It adds browser-network `request.post`,
+explicit challenge replay permission, actual target statuses, single-browser
+admission and lightweight `/ready`. See the [custom POST runbook](docs/custom-post.md)
+and [authoritative specification](docs/custom-post-spec.md) for the verified
+isolated deployment and its limits. Upstream usage instructions are retained below.
+
 <p align="center">
    <img src="icon/logo-byparr.svg" alt="Byparr logo" width="120" />
 </p>

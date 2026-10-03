@@ -172,3 +172,6 @@ downloaded_files/
 
 # Browser Data
 browser_data/
+
+# Private operator evidence, separate from portable verification documentation.
+local-evidence/

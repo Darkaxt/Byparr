@@ -16,7 +16,7 @@ from src.utils import BrowserDepClass, get_browser, logger
 
 router = APIRouter(tags=["Open WebUI"])
 
-BrowserDep = Annotated[BrowserDepClass, Depends(get_browser)]
+BrowserDep = Annotated[BrowserDepClass, Depends(get_browser, scope="function")]
 
 
 class LoadRequest(BaseModel):

@@ -44,6 +44,8 @@ RUN mkdir -p /cache &&\
 
 COPY . .
 
+RUN /app/.venv/bin/python /app/runtime/patch_firefox_redirects.py
+
 RUN mkdir -p /home/byparr &&\
     chmod -R o+rX /app &&\
     chmod -R a+rwX /cache /home/byparr

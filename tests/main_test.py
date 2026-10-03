@@ -151,6 +151,8 @@ def fake_dep(
 ) -> BrowserDepClass:
     """Build a browser dependency pair backed by mocks."""
     page = AsyncMock()
+    page.on = MagicMock()
+    page.remove_listener = MagicMock()
     page.url = "https://example.test/login"
     page.goto.return_value = MagicMock(
         status=HTTPStatus.OK,
@@ -227,8 +229,8 @@ async def test_unreachable_host_is_a_502_not_a_500():
 
 
 @pytest.mark.asyncio
-async def test_status_is_always_ok_like_flaresolverr():
-    """FlareSolverr hardcodes 200 because Selenium cannot report the real code."""
+async def test_status_reports_target_http_status():
+    """The fork reports the real target status available from Playwright."""
     dep = fake_dep()
     dep.page.goto.return_value = MagicMock(
         status=HTTPStatus.FORBIDDEN,
@@ -238,7 +240,7 @@ async def test_status_is_always_ok_like_flaresolverr():
 
     response = await read_item(LinkRequest(url="https://example.test/login"), dep)
 
-    assert response.solution.status == HTTPStatus.OK
+    assert response.solution.status == HTTPStatus.FORBIDDEN
 
 
 def test_exhausted_budget_never_disables_playwright_timeouts():

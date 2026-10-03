@@ -1,0 +1,11 @@
+# Reuse installed immutable browser/dependency layers; no network build steps.
+FROM ghcr.io/thephaseless/byparr@sha256:874f719518f617d03a60e03411fc5d090647e1a877041e81f8dc965927c7deb6
+USER root
+COPY src /app/src
+COPY main.py /app/main.py
+COPY runtime/patch_firefox_redirects.py /app/runtime/patch_firefox_redirects.py
+COPY tests/*integration.py /app/tests/
+RUN /app/.venv/bin/python /app/runtime/patch_firefox_redirects.py
+ENV HOME=/tmp VERSION=custom-post PYTHONDONTWRITEBYTECODE=1
+USER 1000
+HEALTHCHECK NONE

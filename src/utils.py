@@ -1,9 +1,10 @@
+import asyncio
 import logging
 import time
 from collections.abc import AsyncGenerator
 from typing import Annotated, NamedTuple, cast
 
-from fastapi import Header
+from fastapi import Header, HTTPException
 from invisible_playwright.async_api import InvisiblePlaywright
 from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel, Field
@@ -28,6 +29,8 @@ logger = logging.getLogger("uvicorn.error")
 logger.setLevel(LOG_LEVEL)
 if len(logger.handlers) == 0:
     logger.addHandler(logging.StreamHandler())
+
+_browser_slot = asyncio.Lock()
 
 
 class TimeoutTimer(BaseModel):
@@ -93,19 +96,29 @@ async def get_browser(
             "password": PROXY_PASSWORD,
         }
 
-    async with InvisiblePlaywright(
-        headless=True,
-        proxy=proxy_config,
-        humanize=True,
-        locale=BROWSER_LOCALE or "auto",
-        extra_prefs={
-            "devtools.jsonview.enabled": False,
-            "browser.tabs.remote.useCrossOriginOpenerPolicy": False,
-            "browser.tabs.remote.useCrossOriginEmbedderPolicy": False,
-        },
-    ) as browser_raw:
+    if _browser_slot.locked():
+        raise HTTPException(
+            status_code=429, detail="Browser busy; no request was queued or submitted"
+        )
+    async with (
+        _browser_slot,
+        InvisiblePlaywright(
+            headless=True,
+            proxy=proxy_config,
+            humanize=True,
+            locale=BROWSER_LOCALE or "auto",
+            extra_prefs={
+                "devtools.jsonview.enabled": False,
+                "browser.tabs.remote.useCrossOriginOpenerPolicy": False,
+                "browser.tabs.remote.useCrossOriginEmbedderPolicy": False,
+            },
+        ) as browser_raw,
+    ):
         # InvisiblePlaywright yields a Browser instance
         browser = cast("Browser", browser_raw)
         context = await browser.new_context()
-        page = await context.new_page()
-        yield BrowserDepClass(page, context)
+        try:
+            page = await context.new_page()
+            yield BrowserDepClass(page, context)
+        finally:
+            await context.close()

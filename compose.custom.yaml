@@ -1,0 +1,38 @@
+name: byparr-custom
+services:
+  byparr-custom:
+    image: local/byparr-post:custom-post
+    container_name: byparr-custom
+    restart: "no"
+    cpus: 0.5
+    mem_limit: 1g
+    memswap_limit: 1g
+    pids_limit: 256
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    shm_size: 256m
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8191
+      HOME: /tmp
+      LOG_LEVEL: INFO
+      TZ: Europe/Berlin
+    ports: ["127.0.0.1:8192:8191"]
+    networks: [test]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m,mode=1777
+      - /cache/invisible-playwright/fonts:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
+      - /cache/invisible-playwright/geoip:rw,nosuid,nodev,size=128m,uid=1000,gid=1000
+      - /cache/mozilla:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
+      - /cache/fontconfig:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
+      - /cache/mesa_shader_cache:rw,nosuid,nodev,size=16m,uid=1000,gid=1000
+    healthcheck:
+      disable: true
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
+    labels:
+      io.darkaxt.byparr.task: post-fork
+networks:
+  test: {}
