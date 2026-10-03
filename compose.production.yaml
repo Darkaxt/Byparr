@@ -1,0 +1,43 @@
+services:
+  byparr:
+    image: local/byparr-post:prod-756127f
+    container_name: byparr
+    restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 2g
+    memswap_limit: 2g
+    pids_limit: 512
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    shm_size: 256m
+    dns: [76.76.2.22, 1.1.1.1, 9.9.9.9]
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8191
+      HOME: /tmp
+      LOG_LEVEL: INFO
+      TZ: Europe/Berlin
+    ports: ["127.0.0.1:8191:8191"]
+    networks: [lidarr-stack_default]
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=256m,mode=1777
+      - /cache/invisible-playwright/fonts:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
+      - /cache/invisible-playwright/geoip:rw,nosuid,nodev,size=128m,uid=1000,gid=1000
+      - /cache/mozilla:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
+      - /cache/fontconfig:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
+      - /cache/mesa_shader_cache:rw,nosuid,nodev,size=16m,uid=1000,gid=1000
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8191/ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
+    labels:
+      io.darkaxt.byparr.source: "756127f3f3e99f56726581906e7b907d5cae240b"
+networks:
+  lidarr-stack_default:
+    external: true

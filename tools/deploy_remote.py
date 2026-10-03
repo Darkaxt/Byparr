@@ -8,7 +8,13 @@ raise SystemExit(
     run(r"""
 import json, subprocess, pathlib
 root=pathlib.Path('/opt/byparr-custom')
-assert json.loads((root/'production-baseline.json').read_text())['/byparr']['image']=='sha256:874f719518f617d03a60e03411fc5d090647e1a877041e81f8dc965927c7deb6'
+baseline=json.loads((root/'production-baseline.json').read_text())
+current=json.loads(subprocess.check_output(['docker','inspect','byparr','prowlarr']))
+for container in current:
+    saved=baseline[container['Name']]
+    actual={'id':container['Id'],'image':container['Image'],
+            'startedAt':container['State']['StartedAt'],'restartCount':container['RestartCount']}
+    assert actual=={key:saved[key] for key in actual}, 'Production baseline changed; capture and review a fresh baseline before test deployment'
 existing=subprocess.run(['docker','inspect','byparr-custom'],capture_output=True,text=True)
 if existing.returncode==0:
     x=json.loads(existing.stdout)[0]

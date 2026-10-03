@@ -4,6 +4,12 @@ Fork: https://github.com/Darkaxt/Byparr, branch `custom-post`.
 Upstream: https://github.com/ThePhaseless/Byparr, `main` at
 `8bcc5e89c4e3378fb9559b2899b9d285fa1b69db` for this implementation.
 
+Production was promoted to this fork on 2026-10-03, on the original port 8191.
+See [production deployment, evidence and rollback](production-promotion.md).
+The isolated-deployment section below records the original development service,
+which remains stopped on 8192; its historical production-preservation statements
+describe that earlier validation task.
+
 ## API behavior
 
 POST `/v1` is the API transport. The `cmd` now selects real browser-network GET
