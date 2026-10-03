@@ -69,7 +69,7 @@ model. Implementation decisions preserving these criteria need no approval.
 | --- | --- | --- | --- |
 | S1 Browser POST vertical slice | COMPLETE | R2-R5 | Focused regressions pass; CT120 real-browser form/JSON, UTF-8, GET, cookies, 303/307/308 including cross-origin credential stripping, 422/503, controlled challenge rejection and one permitted replay verified |
 | S2 Bounded isolated deployment | COMPLETE | R6-R8 | Real deployed API POST/status/cookie, immediate overload 429, readiness and sequential cleanup pass; hard limits inspected; fresh controlled browser workflow zero OOM/PID events, peak 914 MiB/240 PIDs; external httpbin POST passed, external challenge coverage limited as recorded below; production identity/configuration comparison passed |
-| S3 Reconcile, document, commit and clean | ACTIVE | R1,R9,R10 and all final criteria | Remaining: final runbook/evidence, reviewed cleanup, stopped service, verified fork commit/push and weekly reminder |
+| S3 Reconcile, document, commit and clean | COMPLETE | R1,R9,R10 and all final criteria | Implementation commit f94f24a verified on GitHub; custom-post is fork default; runbook/evidence retained, task-only cleanup applied without residuals, test service stopped, weekly reminder ACTIVE; all requirements reconciled below |
 
 Blockers: none. Tracked deferrals: none. Server preflight established SSH via
 Proxmox and `pct exec 120`; direct CT SSH denied public-key
@@ -106,3 +106,30 @@ cleanup with FastAPI's default request dependency scope. Browser dependencies
 now use function scope, so cleanup and admission release finish before a response
 is sent. An ASGI response-order regression and the deployed sequential/overload
 workflow verify the correction.
+
+## Final reconciliation
+
+| Requirement | Result |
+| --- | --- |
+| R1 | SATISFIED: real public GitHub fork with upstream parent/provenance, verified implementation committed and pushed; default branch custom-post; Actions disabled; no release |
+| R2 | SATISFIED: command/body/header/preflight validation and controlled pre-browser errors; real form/JSON UTF-8 POST |
+| R3 | SATISFIED: actual browser navigation, same-context preflight cookie, scoped routing and verified redirect body/credential semantics |
+| R4 | SATISFIED: controlled real-browser interstitial proves default one POST/409 and permitted two POSTs/200; repeated-challenge bound checked offline |
+| R5 | SATISFIED: actual target status/headers, settled HTML, raw textual response, cookies-only preservation and POST content without GET refetch |
+| R6 | SATISFIED: single worker/browser admission, deployed overload 429 and cheap readiness, success/failure/cancellation cleanup and response ordering |
+| R7 | SATISFIED: isolated deployment; every resource, filesystem, security, networking, logging and restart setting inspected; reused immutable runtime |
+| R8 | SATISFIED: preflight and production comparison retained; real fixture/deployed API verified; bounded external POST/challenge check and unavailable clearance coverage explicitly recorded |
+| R9 | SATISFIED: disposable containers exited/removed, private tmpfs released by stopping service, unused task image/private cache removed by exact IDs, temporary environment/bytecode/lint cache cleanup applied; intentional image/source/evidence retained |
+| R10 | SATISFIED: weekly-byparr-upstream-reminder created ACTIVE on Mondays 09:00 local Europe/Berlin, attached to this task; reminder only, no automatic merge/build/deploy |
+
+Blockers = 0. Tracked deferrals = 0. The external challenge limitation above
+remains an explicitly recorded verification limit, not a claim of live site
+compatibility. Final code matches the verified deployed image's Python AST;
+subsequent documentation/formatting does not invalidate inspected behavior.
+
+Cleanup evidence: local transactional cleanup removed 265147526 bytes of the
+task-only validation environment and 147369 bytes of bytecode/lint caches, with
+both transactions in applied state and no errors or residuals. Server cleanup
+removed the unused validation image and 787.3 kB private task build cache; shared
+references required by retained images and pre-existing cache remain. The retained
+test image has 221.3 kB unique layers. The isolated service is stopped.
