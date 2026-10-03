@@ -4,8 +4,10 @@ USER root
 COPY src /app/src
 COPY main.py /app/main.py
 COPY runtime/patch_firefox_redirects.py /app/runtime/patch_firefox_redirects.py
+COPY runtime/patch_firefox_scripting.py /app/runtime/patch_firefox_scripting.py
 COPY tests/*integration.py /app/tests/
 RUN /app/.venv/bin/python /app/runtime/patch_firefox_redirects.py
+RUN /app/.venv/bin/python /app/runtime/patch_firefox_scripting.py
 ENV HOME=/tmp VERSION=custom-post PYTHONDONTWRITEBYTECODE=1
 USER 1000
 HEALTHCHECK NONE

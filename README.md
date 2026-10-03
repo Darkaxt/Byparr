@@ -4,14 +4,17 @@ This is Darkaxt's `custom-post` fork. It adds browser-network `request.post`,
 explicit challenge replay permission, actual target statuses, single-browser
 admission and lightweight `/ready`. See the [custom POST runbook](docs/custom-post.md)
 and [authoritative specification](docs/custom-post-spec.md) for the verified
-isolated deployment and its limits. Upstream usage instructions are retained below.
+deployment and its limits. Optional `initScript`, awaited `script` and native
+helpers provide request-owned compatibility recipes without browser extensions.
+See the [browser scripting API and verified Uptodown recipe](docs/browser-scripting.md).
+Upstream usage instructions are retained below.
 
 <p align="center">
    <img src="icon/logo-byparr.svg" alt="Byparr logo" width="120" />
 </p>
 
 > [!IMPORTANT]
-> This software does not **guarantee** (only greatly increases the chance) that any challenge will be bypassed. While this tool passes the initial browser check, Cloudflare and other captcha providers likely require valid network traffic originating from the user’s public IP address to mark a connection as legitimate. If any website does not pass the challenge, please run troubleshooting steps and check if other websites work before you create an GitHub issue.
+> This software does not **guarantee** (only greatly increases the chance) that any challenge will be bypassed. While this tool passes the initial browser check, Cloudflare and other captcha providers likely require valid network traffic originating from the userâ€™s public IP address to mark a connection as legitimate. If any website does not pass the challenge, please run troubleshooting steps and check if other websites work before you create an GitHub issue.
 
 ## Options
 
@@ -27,7 +30,7 @@ isolated deployment and its limits. Upstream usage instructions are retained bel
 
 #### Browser language
 
-Set `BROWSER_LOCALE` to a [BCP-47](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) language tag like `en-US`, `de-DE`, `fr-FR`, `pl-PL`, or `zh-CN` to fix the browser's language and `Accept-Language` header. When unset, Byparr derives the locale from the egress country (e.g. a French proxy → `fr-FR`), keeping the browser language consistent with the exit IP.
+Set `BROWSER_LOCALE` to a [BCP-47](https://www.rfc-editor.org/rfc/bcp/bcp47.txt) language tag like `en-US`, `de-DE`, `fr-FR`, `pl-PL`, or `zh-CN` to fix the browser's language and `Accept-Language` header. When unset, Byparr derives the locale from the egress country (e.g. a French proxy â†’ `fr-FR`), keeping the browser language consistent with the exit IP.
 
 Valid tags are maintained in the [IANA Language Subtag Registry](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry). For a friendlier list, see [List of ISO 639-1 codes](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes) (language) combined with an [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) region code for the full tag, e.g. `pt-BR`.
 

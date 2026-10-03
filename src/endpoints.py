@@ -1,9 +1,11 @@
+import asyncio
+import contextlib
 import time
 import warnings
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import Response, Route
@@ -18,6 +20,7 @@ from src.models import (
     LinkResponse,
     Solution,
 )
+from src.scripting import BrowserScript
 from src.utils import (
     BrowserDepClass,
     TimeoutTimer,
@@ -65,8 +68,12 @@ async def health_check(sb: BrowserDep):
 
 
 @router.post("/v1")
-async def read_item(request: LinkRequest, dep: BrowserDep) -> LinkResponse:
+async def read_item(
+    request: LinkRequest, dep: BrowserDep, http_request: Request = None
+) -> LinkResponse:
     """Handle POST requests."""
+    if request.has_scripts:
+        return await _run_scripted_request(request, dep, http_request)
     start_time = int(time.time() * 1000)
     timer = TimeoutTimer(duration=request.max_timeout)
     request.url = request.url.replace('"', "").strip()
@@ -132,6 +139,109 @@ async def read_item(request: LinkRequest, dep: BrowserDep) -> LinkResponse:
         ),
         start_timestamp=start_time,
     )
+
+
+async def _run_scripted_request(
+    request: LinkRequest, dep: BrowserDepClass, http_request: Request | None
+) -> LinkResponse:
+    """Enforce the API budget and react to client cancellation from the host."""
+    operation = asyncio.create_task(_read_scripted_item(request, dep))
+    disconnect = None
+    try:
+        async with asyncio.timeout(request.max_timeout):
+            if http_request is not None:
+                disconnect = asyncio.create_task(_wait_for_disconnect(http_request))
+                done, _ = await asyncio.wait(
+                    (operation, disconnect), return_when=asyncio.FIRST_COMPLETED
+                )
+                if disconnect in done:
+                    raise HTTPException(
+                        499, "Client disconnected from browser operation"
+                    )
+            return await operation
+    except TimeoutError as error:
+        raise HTTPException(408, "Browser operation exceeded maxTimeout") from error
+    finally:
+        for task in (operation, disconnect):
+            if task is not None:
+                if not task.done():
+                    task.cancel()
+                with contextlib.suppress(asyncio.CancelledError, Exception):
+                    await task
+
+
+async def _wait_for_disconnect(request: Request) -> None:
+    """Wait for the actual ASGI disconnect event, without polling or sleeps."""
+    while (await request.receive())["type"] != "http.disconnect":
+        pass
+
+
+async def _read_scripted_item(
+    request: LinkRequest, dep: BrowserDepClass
+) -> LinkResponse:
+    """Navigate, execute the supplied recipe and keep output distinct from HTML."""
+    start_time = int(time.time() * 1000)
+    timer = TimeoutTimer(duration=request.max_timeout)
+    session = BrowserScript(dep, request, timer)
+    responses: list[Response] = []
+
+    def capture_navigation(response: Response) -> None:
+        if (
+            response.request.is_navigation_request()
+            and response.request.frame == dep.page.main_frame
+        ):
+            responses.append(response)
+
+    dep.page.on("response", capture_navigation)
+    try:
+        await session.install()
+        challenged, html, target = await _submit_navigation(
+            dep, request, timer, responses
+        )
+        target = responses[-1] if responses else target
+        if target is None:
+            raise HTTPException(502, "Target navigation produced no HTTP response")
+        page_url = dep.page.url
+        content_type, content = await build_response_content(
+            dep.page, request, target, challenge_detected=challenged, page_html=html
+        )
+        result = await session.run()
+        cookie_urls = [
+            page_url,
+            *(record["url"] for record in result.captures.values()),
+        ]
+        cookies = await dep.context.cookies(cookie_urls)
+        user_agent = target.request.headers.get("user-agent", "")
+        session.check_size(
+            {
+                "scriptResult": result.model_dump(by_alias=True),
+                "cookies": cookies,
+                "userAgent": user_agent,
+            }
+        )
+        return LinkResponse(
+            message="Success",
+            start_timestamp=start_time,
+            solution=Solution(
+                url=page_url,
+                status=target.status,
+                headers=target.headers,
+                response=content,
+                content_type=content_type,
+                user_agent=user_agent,
+                cookies=cookies,
+            ),
+            scriptResult=result,
+        )
+    except PlaywrightTimeoutError as error:
+        raise HTTPException(408, "Browser operation exceeded maxTimeout") from error
+    except PlaywrightError as error:
+        raise HTTPException(
+            502, "Browser navigation or scripting initialization failed"
+        ) from error
+    finally:
+        dep.page.remove_listener("response", capture_navigation)
+        await session.close()
 
 
 async def _submit_navigation(
@@ -204,7 +314,10 @@ async def setup_routes(request: LinkRequest, dep: BrowserDep) -> None:
             if request.headers:
                 await route.continue_(headers=headers)
                 return
-        await route.continue_()
+        if request.has_scripts:
+            await route.fallback()
+        else:
+            await route.continue_()
 
     await dep.page.route("**/*", handle_route)
 
@@ -216,18 +329,24 @@ async def _navigate_and_solve(
 ) -> tuple[bool, str | None, object]:
     """Navigate to the URL, then solve a challenge or wait for network idle."""
     page_html: str | None = None
-    page_request = await dep.page.goto(request.url, timeout=remaining_ms(timer))
+    page_request = await dep.page.goto(
+        request.url,
+        timeout=remaining_ms(timer),
+        **({"wait_until": "domcontentloaded"} if request.has_scripts else {}),
+    )
     await dep.page.wait_for_load_state(
         state="domcontentloaded", timeout=remaining_ms(timer)
     )
 
     if not await challenge_present(dep.page):
-        await _wait_for_networkidle(dep, timer)
+        if not request.has_scripts:
+            await _wait_for_networkidle(dep, timer)
         page_html = await dep.page.content()
         return False, page_html, page_request
 
     await solve_challenge(dep.page, timer)
-    await _wait_for_networkidle(dep, timer)
+    if not request.has_scripts:
+        await _wait_for_networkidle(dep, timer)
     return True, page_html, page_request
 
 

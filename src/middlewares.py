@@ -24,6 +24,7 @@ class LogRequest(BaseHTTPMiddleware):
             return JSONResponse(
                 status_code=422, content={"detail": "Invalid Byparr request"}
             )
+        request.state.byparr_scripted = request_body.has_scripts
         logger.info(
             f"From: {request.client.host if request.client else 'unknown'} at {time.strftime('%Y-%m-%d %H:%M:%S')}: {request_body.url}"
         )

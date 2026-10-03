@@ -4,7 +4,7 @@ import time
 from collections.abc import AsyncGenerator
 from typing import Annotated, NamedTuple, cast
 
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Request
 from invisible_playwright.async_api import InvisiblePlaywright
 from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel, Field
@@ -75,6 +75,7 @@ async def get_browser(
             alias="X-Proxy-Password",
         ),
     ] = None,
+    http_request: Request = None,
 ) -> AsyncGenerator[BrowserDepClass]:
     """Get InvisiblePlaywright browser instance."""
     header_server = x_proxy_server
@@ -96,6 +97,10 @@ async def get_browser(
             "password": PROXY_PASSWORD,
         }
 
+    scripted = http_request is not None and getattr(
+        http_request.state, "byparr_scripted", False
+    )
+
     if _browser_slot.locked():
         raise HTTPException(
             status_code=429, detail="Browser busy; no request was queued or submitted"
@@ -116,7 +121,11 @@ async def get_browser(
     ):
         # InvisiblePlaywright yields a Browser instance
         browser = cast("Browser", browser_raw)
-        context = await browser.new_context()
+        context = (
+            await browser.new_context(bypass_csp=True, service_workers="block")
+            if scripted
+            else await browser.new_context()
+        )
         try:
             page = await context.new_page()
             yield BrowserDepClass(page, context)

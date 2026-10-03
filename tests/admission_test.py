@@ -7,11 +7,34 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
+from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from main import app
 from src.utils import BrowserDepClass, get_browser
 from tests.post_test import dependency
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("scripted", [True, False])
+async def test_only_scripted_contexts_bypass_csp_and_block_workers(scripted):
+    """Trusted scripting enables CSP bypass and authoritative capture; ordinary contexts do not."""
+    request = Request({"type": "http", "state": {"byparr_scripted": scripted}})
+    browser = AsyncMock()
+    manager = MagicMock()
+    manager.__aenter__ = AsyncMock(return_value=browser)
+    manager.__aexit__ = AsyncMock(return_value=False)
+    with patch("src.utils.InvisiblePlaywright", return_value=manager) as factory:
+        operation = get_browser(http_request=request)
+        await anext(operation)
+        await operation.aclose()
+    if scripted:
+        browser.new_context.assert_awaited_once_with(
+            bypass_csp=True, service_workers="block"
+        )
+    else:
+        browser.new_context.assert_awaited_once_with()
+    assert "dom.serviceWorkers.enabled" not in factory.call_args.kwargs["extra_prefs"]
 
 
 @pytest.mark.asyncio

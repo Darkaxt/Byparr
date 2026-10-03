@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 from http.client import INTERNAL_SERVER_ERROR
@@ -7,13 +8,21 @@ from typing import Any, Literal
 from urllib.parse import urlsplit
 
 from playwright.sync_api import Cookie
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from pydantic.alias_generators import to_camel
 
 from src import consts
 
 MS_PER_SECOND = 1000
 MAX_HEADER_BYTES = 16384
+MAX_SCRIPT_BYTES = 65536
 
 
 class LinkRequest(BaseModel):
@@ -30,6 +39,41 @@ class LinkRequest(BaseModel):
     headers: dict[str, str] = Field(default_factory=dict, max_length=32)
     preflight_url: str | None = Field(default=None, alias="preflightUrl")
     replay_post_on_challenge: bool = Field(default=False, alias="replayPostOnChallenge")
+    init_script: str | None = Field(
+        default=None, alias="initScript", max_length=MAX_SCRIPT_BYTES
+    )
+    script: str | None = Field(default=None, max_length=MAX_SCRIPT_BYTES)
+    script_args: Any = Field(default=None, alias="scriptArgs")
+
+    @property
+    def has_scripts(self) -> bool:
+        """Whether this operation needs the optional scripting lifecycle."""
+        return self.init_script is not None or self.script is not None
+
+    @model_validator(mode="after")
+    def validate_scripts(self) -> LinkRequest:
+        """Bound optional source/arguments before allocating a browser."""
+        if self.script_args is not None and self.script is None:
+            message = "scriptArgs requires script"
+            raise ValueError(message)
+        for source in (self.init_script, self.script):
+            if source is not None and len(source.encode("utf-8")) > MAX_SCRIPT_BYTES:
+                message = "Script exceeds 64 KiB UTF-8"
+                raise ValueError(message)
+        try:
+            arguments = json.dumps(
+                self.script_args, ensure_ascii=False, allow_nan=False
+            )
+        except (TypeError, ValueError) as error:
+            message = "scriptArgs must be finite JSON"
+            raise ValueError(message) from error
+        if len(arguments.encode("utf-8")) > MAX_SCRIPT_BYTES:
+            message = "scriptArgs exceeds 64 KiB UTF-8"
+            raise ValueError(message)
+        if self.has_scripts and self.max_timeout <= 0:
+            message = "Scripting requires a positive maxTimeout"
+            raise ValueError(message)
+        return self
 
     @model_validator(mode="after")
     def validate_post(self) -> LinkRequest:
@@ -136,6 +180,14 @@ class Solution(BaseModel):
     content_type: str = Field(default="text/html", alias="contentType")
 
 
+class ScriptResult(BaseModel):
+    """Structured browser output, separate from navigation HTML/status."""
+
+    value: Any = None
+    captures: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    terminal_capture: str | None = Field(default=None, alias="terminalCapture")
+
+
 class LinkResponse(BaseModel):
     model_config = {"alias_generator": to_camel, "populate_by_name": True}
     status: str = "ok"
@@ -144,6 +196,18 @@ class LinkResponse(BaseModel):
     start_timestamp: int
     end_timestamp: int = Field(default_factory=lambda: int(time.time() * 1000))
     version: str = consts.VERSION
+    script_result: ScriptResult | None = Field(default=None, alias="scriptResult")
+
+    @model_serializer(mode="wrap")
+    def serialize_optional_script_result(
+        self, handler: SerializerFunctionWrapHandler
+    ) -> dict[str, Any]:
+        """Omit absent scripting while preserving explicit null script values."""
+        value = handler(self)
+        if self.script_result is None:
+            value.pop("scriptResult", None)
+            value.pop("script_result", None)
+        return value
 
     @classmethod
     def invalid(cls, url: str) -> LinkResponse:
