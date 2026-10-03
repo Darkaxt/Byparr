@@ -33,9 +33,16 @@ clearance is not guaranteed and requires actual target evidence.
 | --- | --- | --- | --- |
 | Review and qualification | COMPLETE | P1-P2 | Reviewed source matches candidate image AST; real HTTP API/browser fixtures pass, including GET/form/JSON/status/cookies/replay/redirects; Prowlarr candidate proxy test 200; original and candidate live 1337x GET both return target 200 |
 | Production cutover and verification | COMPLETE | P3-P4 | Original port/name/network/DNS/Serve preserved; production Prowlarr proxy test 200; real JSON POST from Windows over Tailscale to httpbin returned target 200 and exact payload; healthy with no restarts/OOM/PID events; original pinned Compose/image retained for rollback; development container stopped |
-| Reconciliation and delivery | ACTIVE | P5 | Verification recorded; cleanup and committed delivery pending |
+| Reconciliation and delivery | BLOCKED | P5 | Reviewed deployment artifacts committed/pushed; verification recorded; validation environment removed, but two empty cache markers remain because deletion was policy-blocked |
 
-Blockers: none. Tracked deferrals: none.
+Blocker (external, P5 cleanup): the cleanup helper misclassified UV's empty
+`.git` cache marker as a repository, and command policy rejected exact marker
+removal. Two zero-byte files (`.git`, `.gitignore`) and their empty parent
+directories remain under `D:\Temp\byparr-production-promotion\uv-cache\sdists-v9`.
+Cleanup completion requires permitted removal of those exact generated markers
+and empty parents. This does not block P1-P4 or the verified running deployment,
+but P5 and overall specification closure remain incomplete. The partial cleanup
+ticket was revoked rather than left active. Tracked deferrals: none.
 
 ## Reviewed outcome (2026-10-03)
 
@@ -79,6 +86,17 @@ actual Byparr/Prowlarr container identities, images, start times and restart
 counts instead. This permits the new production image while rejecting a stale
 pre-promotion baseline before any build or deployment. Archive historical
 evidence and capture/review a fresh baseline before the next development run.
+
+## Final reconciliation
+
+P1-P4 are satisfied and verified against the reviewed source, deployed runtime,
+real browser fixtures, existing Prowlarr integration and Tailscale HTTPS endpoint.
+Deployment artifacts were committed and pushed in `1e0ace6`. P5 evidence and
+delivery are satisfied; only the explicitly recorded cleanup blocker remains.
+Transactional cleanup deleted 420963179 logical bytes of task-owned validation
+files, including the disposable environment and linked cache names, without
+removing unrelated files or the shared link targets. The residual markers contain
+no data. No reboot, global Docker restart or Prowlarr restart was performed.
 
 ## Production endpoints and recovery
 
