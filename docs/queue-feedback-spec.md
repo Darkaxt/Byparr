@@ -31,9 +31,9 @@ default FIFO admission remains authoritative in `transactional-admission-spec.md
 | Stage | Status | Acceptance |
 | --- | --- | --- |
 | F1 Contract and implementation | COMPLETE | F1-F3: focused feedback movement, duplicate rejection, removal, browser-free/uncached endpoint, identity in ordinary/scripted responses and existing POST/script/admission regressions pass; affected lint passes |
-| F2 Original-endpoint qualification and delivery | ACTIVE | F4 installed-runtime HTTP/live feedback, Prowlarr, configuration/docs/cleanup/source delivery |
+| F2 Original-endpoint qualification and delivery | COMPLETE | F4 installed-runtime and original HTTPS live feedback pass; Prowlarr/caps/configuration/source/cleanup verified; commit 9136423 pushed and inspected on origin/custom-post |
 
-Blockers: none. Tracked deferrals: none. Exactly one stage is ACTIVE.
+All stages are COMPLETE. Blockers: none. Tracked deferrals: none.
 
 ## Verification and reconciliation
 
@@ -42,7 +42,7 @@ Blockers: none. Tracked deferrals: none. Exactly one stage is ACTIVE.
 | F1 | New regressions failed before implementation; supplied/generated identity in ordinary/scripted JSON and headers passes; installed HTTP duplicate-ID 409 has zero extra submission |
 | F2 | Installed HTTP feedback moves from 2/2 to 1/1 after an earlier waiter disconnects; feedback remains browser-free while an actual browser is held; original HTTPS feedback movement also passes alongside normal consumers; no-store inspected |
 | F3 | Actual cancelled/finished IDs return 404, no cancelled upstream arrival, no retained identities; ordinary GET/scripted POST/FIFO/full-queue 503 and readiness regressions pass |
-| F4 | Original HTTPS qualification and actual Prowlarr proxy test 200 pass; Prowlarr identity/start/config and Tailscale configuration unchanged; reviewed runtime module hashes match deployed source, production Compose matches repository configuration; cleanup verified, source delivery remains the final step |
+| F4 | Original HTTPS qualification and actual Prowlarr proxy test 200 pass; Prowlarr identity/start/config and Tailscale configuration unchanged; reviewed runtime module hashes match deployed source, production Compose matches repository configuration; cleanup verified; source commit 9136423 verified on origin/custom-post |
 
 Deployed image:
 `sha256:7da2c6b4295b1ac51bc5dca500ce9d5b800bf65d44c0b7e9bdfd700033314e51`.
