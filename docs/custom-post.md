@@ -7,8 +7,8 @@ Upstream: https://github.com/ThePhaseless/Byparr, `main` at
 Production was promoted to this fork on 2026-10-03, on the original port 8191.
 See [production deployment, evidence and rollback](production-promotion.md).
 The isolated-deployment section below records the original development service,
-which remains stopped on 8192; its historical production-preservation statements
-describe that earlier validation task.
+which was removed after production qualification; its production-preservation
+statements describe that earlier validation task.
 
 ## API behavior
 
@@ -49,28 +49,25 @@ is the settled DOM. `solution.status` is the actual final target status, includi
 4xx/5xx. Inspect both the API HTTP/status result and `solution.status`.
 
 `GET /ready` checks API readiness without a browser or external traffic. Browser
-operations share one admission slot; excess operations return immediate HTTP
-429 and are never queued or submitted. Cleanup finishes before a successful
+operations share one admission slot and wait in a bounded FIFO by default. A full
+16-waiter backlog returns HTTP 503 before submission. Disconnected waiters are
+removed; cleanup finishes before handoff and before a successful
 response is sent. Run exactly one application worker; the limit is per process.
 The inherited `/health` launches a browser and is unsuitable for idle monitoring.
+`/ready` includes browser `active`, `queued` and `queueLimit` counts. Waiting is
+outside the existing execution `maxTimeout`; account for it in client HTTP budgets.
+See `transactional-admission-spec.md` for current deployment and verification.
 
-## Isolated deployment
+## Historical isolated deployment
 
-The test service lives at `/opt/byparr-custom` in the media LXC. It has a separate
+The original test service lived at `/opt/byparr-custom` in the media LXC. It had a separate
 Compose project, container and network, with `127.0.0.1:8192` mapped to its API.
 The existing production instance, consumers, Compose file and Tailscale Serve
 configuration are unchanged. No public endpoint or production switchover exists.
 
-The test service is deliberately **stopped after verification**. Inside the LXC:
-
-```sh
-docker compose -f /opt/byparr-custom/compose.custom.yaml start
-curl http://127.0.0.1:8192/ready
-# After manual testing:
-docker compose -f /opt/byparr-custom/compose.custom.yaml stop
-```
-
-From Proxmox, prepend `pct exec 120 --` to those commands.
+That service and its task-owned deployment files were removed after verification.
+For a new maintenance run, create a fresh isolated fixture deployment with the
+current production runtime and limits; do not start an obsolete development image.
 
 Limits: 0.5 CPU, 1 GiB memory including bounded tmpfs, no additional swap,
 256 PIDs, logs limited to 2 x 5 MiB. The container runs as UID 1000, with a

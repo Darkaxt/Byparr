@@ -28,7 +28,10 @@ per-request compatibility patch without an extension or persistent installation.
 Script requests use the existing `maxTimeout` seconds/milliseconds convention.
 That budget covers navigation, initialization, helpers and the awaited result.
 The host enforces it even for an unresolved promise or a CPU-bound page script.
-Client disconnect cancels the operation. There are no automatic action retries,
+All callers now wait in a bounded FIFO before browser allocation, without an
+opt-in flag. Queue waiting does not consume this execution budget; clients must
+allow for waiting in their own HTTP budgets. A queued disconnect removes the
+request before submission. Client disconnect cancels the scripted operation. There are no automatic action retries,
 POST replays or persistent browser sessions. Existing navigation-level
 `replayPostOnChallenge` permission remains unchanged.
 
@@ -105,8 +108,9 @@ their actual `status`, response `headers`, `body` and `requestHeaders`.
 HTTP 422 reports validation, script or helper failure; completed response evidence
 is retained in `detail.scriptResult` when a recipe rejects that response. HTTP
 413 reports captured-output/page limits; an oversized JavaScript return reports
-a controlled 422. HTTP 408 reports the API budget, and 429
-reports busy admission without queuing or submission. Arbitrary script exception
+a controlled 422. HTTP 408 reports the execution budget; HTTP 503 reports a full
+16-waiter backlog before submission. An occupied browser alone queues the request.
+Arbitrary script exception
 text is not exposed or logged. Captures may contain credentials or signed URLs:
 keep responses private and scope cookies to their destinations for native HTTP.
 
@@ -174,7 +178,11 @@ image after its defined use. No permanent rollback image is required.
 
 `tools/verify_uptodown.py` repeats the
 one-request/native-download host check and keeps secrets under gitignored
-`local-evidence`; a 429 means no browser submission occurred. Do not replay the
+`local-evidence`; a full-queue 503 means no browser submission occurred. Do not replay the
 click or token POST automatically. Controlled fixtures prove interface contracts;
 this live run proves Uptodown acceptance on this occasion, not every future
 Turnstile decision.
+
+Current admission behavior, deployed image and FIFO verification are recorded in
+[transactional admission](transactional-admission-spec.md). The Uptodown image and
+verification above describe the original scripting qualification on 2026-10-03.

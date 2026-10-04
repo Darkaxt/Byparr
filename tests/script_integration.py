@@ -316,17 +316,22 @@ def main():
             )
             worker.start()
             held.wait()
+            queued_result = []
+            queued_worker = threading.Thread(
+                target=lambda: queued_result.append(api(client, script="() => null"))
+            )
+            queued_worker.start()
             try:
-                assert api(client, script="() => null").status_code == 429
-                assert client.get("/ready").status_code == 200
+                while client.get("/ready").json()["browser"]["queued"] != 1:
+                    pass
+                assert not queued_result
             finally:
                 release.set()
                 worker.join()
+                queued_worker.join()
             assert result[0].status_code == 200, result[0].text
-            print(
-                "PASS immediate scripted-operation overload rejection and cheap readiness",
-                flush=True,
-            )
+            assert queued_result[0].status_code == 200, queued_result[0].text
+            print("PASS FIFO scripted admission and cheap readiness", flush=True)
 
             asyncio.run(verify_disconnect())
             response = api(client, script="() => ({afterDisconnect:true})")

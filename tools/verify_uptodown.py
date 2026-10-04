@@ -69,11 +69,14 @@ def cookie_jar(cookies: list[dict]) -> http.cookiejar.CookieJar:
 
 
 def main() -> int:
-    """Run once; busy or rejected flows are evidence, never automatic retries."""
+    """Run once; rejected flows are evidence, never automatic retries."""
     EVIDENCE.mkdir(parents=True, exist_ok=True)
     with urllib.request.urlopen(ENDPOINT + "/ready") as response:
         ready = json.load(response)
-    assert ready["version"] == "custom-post-scripting", ready
+    assert ready["version"] in {
+        "custom-post-scripting",
+        "custom-post-scripting-queue",
+    }, ready
     payload = {
         "cmd": "request.get",
         "url": PAGE,

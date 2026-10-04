@@ -2,11 +2,13 @@
 
 This is Darkaxt's `custom-post` fork. It adds browser-network `request.post`,
 explicit challenge replay permission, actual target statuses, single-browser
-admission and lightweight `/ready`. See the [custom POST runbook](docs/custom-post.md)
+FIFO admission and lightweight `/ready`. See the [custom POST runbook](docs/custom-post.md)
 and [authoritative specification](docs/custom-post-spec.md) for the verified
 deployment and its limits. Optional `initScript`, awaited `script` and native
 helpers provide request-owned compatibility recipes without browser extensions.
 See the [browser scripting API and verified Uptodown recipe](docs/browser-scripting.md).
+All callers now wait transactionally, with no request flag. See the
+[admission contract and verification](docs/transactional-admission-spec.md).
 Upstream usage instructions are retained below.
 
 <p align="center">

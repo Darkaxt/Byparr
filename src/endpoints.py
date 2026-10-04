@@ -11,6 +11,7 @@ from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import Response, Route
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
+from src.admission import wait_for_disconnect
 from src.challenge import challenge_present, solve_challenge
 from src.consts import VERSION
 from src.content import build_response_content
@@ -24,6 +25,7 @@ from src.scripting import BrowserScript
 from src.utils import (
     BrowserDepClass,
     TimeoutTimer,
+    browser_admission,
     get_browser,
     logger,
     remaining_ms,
@@ -38,9 +40,9 @@ BrowserDep = Annotated[BrowserDepClass, Depends(get_browser, scope="function")]
 
 
 @router.get("/ready")
-async def readiness() -> dict[str, str]:
+async def readiness() -> dict[str, object]:
     """Report API readiness without browser launch or external traffic."""
-    return {"status": "ok", "version": VERSION}
+    return {"status": "ok", "version": VERSION, "browser": browser_admission.status()}
 
 
 @router.get("/", include_in_schema=False)
@@ -150,7 +152,7 @@ async def _run_scripted_request(
     try:
         async with asyncio.timeout(request.max_timeout):
             if http_request is not None:
-                disconnect = asyncio.create_task(_wait_for_disconnect(http_request))
+                disconnect = asyncio.create_task(wait_for_disconnect(http_request))
                 done, _ = await asyncio.wait(
                     (operation, disconnect), return_when=asyncio.FIRST_COMPLETED
                 )
@@ -168,12 +170,6 @@ async def _run_scripted_request(
                     task.cancel()
                 with contextlib.suppress(asyncio.CancelledError, Exception):
                     await task
-
-
-async def _wait_for_disconnect(request: Request) -> None:
-    """Wait for the actual ASGI disconnect event, without polling or sleeps."""
-    while (await request.receive())["type"] != "http.disconnect":
-        pass
 
 
 async def _read_scripted_item(

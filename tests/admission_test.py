@@ -1,6 +1,7 @@
 """Admission must precede browser creation and release on every exit path."""
 
 import asyncio
+import contextlib
 import json
 from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -11,8 +12,137 @@ from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from main import app
+from src.admission import BrowserAdmission
 from src.utils import BrowserDepClass, get_browser
 from tests.post_test import dependency
+
+
+def test_handoff_cannot_be_overtaken_and_queue_is_bounded():
+    """Ownership moves atomically to an existing waiter, never a new arrival."""
+
+    # Futures belong to a loop, while registration/handoff themselves never await.
+    async def exercise() -> None:
+        admission = BrowserAdmission(2)
+        first, second, third = admission.enter(), admission.enter(), admission.enter()
+        with pytest.raises(HTTPException) as error:
+            admission.enter()
+        assert error.value.status_code == 503  # noqa: PLR2004 - backlog full
+        admission.leave(first)
+        newcomer = admission.enter()
+        assert admission.owner is second
+        assert not third.done()
+        assert not newcomer.done()
+        admission.leave(second)
+        assert admission.owner is third
+        assert not newcomer.done()
+        admission.leave(third)
+        assert admission.owner is newcomer
+        admission.leave(newcomer)
+        assert admission.status() == {"active": False, "queued": 0, "queueLimit": 2}
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("handoff", [False, True])
+async def test_cancelled_waiter_and_handoff_release_without_submission(handoff):
+    """Task cancellation removes a pending ticket, including just-granted ownership."""
+    admission = BrowserAdmission(2)
+    owner = admission.enter()
+    entered = asyncio.Event()
+    submitted = False
+
+    async def waiter() -> None:
+        nonlocal submitted
+        entered.set()
+        async with admission.transaction():
+            submitted = True
+
+    task = asyncio.create_task(waiter())
+    await entered.wait()
+    if handoff:
+        admission.leave(owner)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    if not handoff:
+        admission.leave(owner)
+    assert not submitted
+    assert admission.status()["queued"] == 0
+    async with admission.transaction():
+        assert admission.status()["active"]
+    assert not admission.status()["active"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("handoff", [False, True])
+async def test_disconnected_waiter_never_submits(handoff):
+    """The actual disconnect wins over simultaneous ownership handoff."""
+    admission = BrowserAdmission(2)
+    owner = admission.enter()
+    receiving = asyncio.Event()
+    messages = asyncio.Queue()
+
+    async def receive() -> dict:
+        receiving.set()
+        return await messages.get()
+
+    request = Request({"type": "http"}, receive)
+    submitted = False
+
+    async def waiter() -> None:
+        nonlocal submitted
+        async with admission.transaction(request):
+            submitted = True
+
+    task = asyncio.create_task(waiter())
+    await receiving.wait()
+    messages.put_nowait({"type": "http.disconnect"})
+    if handoff:
+        admission.leave(owner)
+    with pytest.raises(HTTPException) as error:
+        await task
+    assert error.value.status_code == 499  # noqa: PLR2004 - actual disconnect
+    if not handoff:
+        admission.leave(owner)
+    assert not submitted
+    assert not admission.status()["active"]
+    assert admission.status()["queued"] == 0
+
+
+@pytest.mark.asyncio
+async def test_next_browser_waits_for_driver_exit():
+    """Context close alone cannot release admission before driver cleanup."""
+    exiting, allow_exit, waiting = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    manager = MagicMock()
+    browser = AsyncMock()
+    manager.__aenter__ = AsyncMock(return_value=browser)
+
+    async def driver_exit(*_args: object) -> bool:
+        exiting.set()
+        await allow_exit.wait()
+        return False
+
+    manager.__aexit__ = AsyncMock(side_effect=driver_exit)
+    with patch("src.utils.InvisiblePlaywright", return_value=manager) as factory:
+        first, second = get_browser(), get_browser()
+        await anext(first)
+        closing = asyncio.create_task(first.aclose())
+        await exiting.wait()
+
+        async def begin() -> BrowserDepClass:
+            waiting.set()
+            return await anext(second)
+
+        next_task = asyncio.create_task(begin())
+        await waiting.wait()
+        assert factory.call_count == 1
+        assert not next_task.done()
+        allow_exit.set()
+        await closing
+        await next_task
+        await second.aclose()
+    assert browser.new_context.return_value.close.await_count == 2  # noqa: PLR2004
 
 
 @pytest.mark.asyncio
@@ -38,24 +168,44 @@ async def test_only_scripted_contexts_bypass_csp_and_block_workers(scripted):
 
 
 @pytest.mark.asyncio
-async def test_busy_browser_is_rejected_and_success_releases_admission():
-    """One admitted operation rejects another without launching another browser."""
+async def test_browser_requests_wait_fifo_without_extra_launches():
+    """Waiting requests launch once, in order, after the preceding cleanup."""
     manager = MagicMock()
     manager.__aenter__ = AsyncMock(return_value=AsyncMock())
     manager.__aexit__ = AsyncMock(return_value=False)
     with patch("src.utils.InvisiblePlaywright", return_value=manager) as factory:
         first = get_browser()
         await anext(first)
-        other = get_browser()
-        with pytest.raises(HTTPException) as error:
-            await anext(other)
-        assert error.value.status_code == 429  # noqa: PLR2004 - HTTP admission response
-        assert factory.call_count == 1
-        await first.aclose()
-        next_request = get_browser()
-        await anext(next_request)
-        await next_request.aclose()
-    assert manager.__aexit__.await_count == 2  # noqa: PLR2004 - two admitted requests
+        second, third = get_browser(), get_browser()
+        started = asyncio.Queue()
+
+        async def begin(operation) -> BrowserDepClass:
+            started.put_nowait(None)
+            return await anext(operation)
+
+        second_task = asyncio.create_task(begin(second))
+        await started.get()
+        third_task = asyncio.create_task(begin(third))
+        await started.get()
+        try:
+            assert not second_task.done()
+            assert not third_task.done()
+            assert factory.call_count == 1
+            await first.aclose()
+            await second_task
+            assert not third_task.done()
+            await second.aclose()
+            await third_task
+            await third.aclose()
+        finally:
+            for task in (second_task, third_task):
+                if not task.done():
+                    task.cancel()
+                with contextlib.suppress(asyncio.CancelledError, HTTPException):
+                    await task
+            for operation in (first, second, third):
+                await operation.aclose()
+    assert manager.__aexit__.await_count == 3  # noqa: PLR2004 - three transactions
 
 
 @pytest.mark.asyncio

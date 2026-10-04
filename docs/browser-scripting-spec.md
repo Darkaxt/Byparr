@@ -121,7 +121,8 @@ scope and request metadata survive capture, and oversize outputs fail cleanly.
 
 ### B6: Preserve server stability and existing consumers
 
-- Keep one browser operation, immediate 429 without queuing/submission, cleanup
+- Keep one browser operation with default transactional FIFO admission as
+  authorized on 2026-10-04 in `transactional-admission-spec.md`, and cleanup
   before response delivery, and browser-free `/ready` monitoring.
 - Preserve the original service name, network, Tailscale endpoint and port 8191.
   Preserve production limits of one CPU, 2 GiB memory, no extra swap, 512 PIDs,
@@ -168,7 +169,7 @@ the documented native download boundary without claiming those Android checks.
 | --- | --- | --- | --- |
 | S1 Generic browser-script vertical slice | COMPLETE | B1-B5; lifecycle portions of B6 | Installed Firefox verified strict main-document CSP, uninjected child binding state, blocked worker registration, native input, AJAX/popup/navigation capture, retained failures, cancellation/CPU-bound cleanup and ordinary GET/POST/replay regressions |
 | S2 Original-endpoint live qualification | COMPLETE | B6-B7 | Original HTTPS API 200; website resolution POST 200/success=1; signed request aborted before transfer; native APK 200, exact 3.72.0 package/version/hash; Prowlarr proxy test 200 unchanged; healthy/no browser/no restart/OOM/PID event, production caps preserved |
-| S3 Final reconciliation and delivery | BLOCKED | B1-B7 | Runtime/source verification, source delivery, reminder and superseded-image cleanup pass; two empty cache markers remain policy-blocked |
+| S3 Final reconciliation and delivery | COMPLETE | B1-B7 | Runtime/source verification, source delivery, reminder and superseded-image cleanup pass; former empty-cache restriction resolved through reviewed cleanup on 2026-10-04 |
 
 Only one stage may be ACTIVE. Before starting S1, finalize the concrete helper
 names and terminal-capture selection contract to implement the behaviors above.
@@ -221,15 +222,13 @@ the earlier stopped-development-container/retained-rollback-image arrangement.
 Task-owned server staging `/opt/byparr-scripting` was removed after an exact
 hash-reviewed snapshot. Compact evidence remains intentionally under
 `/opt/byparr/browser-scripting-evidence.json`; private local evidence is gitignored.
-Local cleanup reclaimed 521383928 bytes. Two zero-byte cache marker files under
-`D:/Temp/byparr-browser-scripting/uv-cache/sdists-v9` remain: `.git` and `.gitignore`.
-
-S3 blocker: required expendable-artifact cleanup cannot fully pass because
-automatic approval review rejected exact deletion of those two verified empty
-files as "blocked by policy." This is external to the implementation. It resolves
-when deletion is permitted or the user removes those exact files and their empty
-parent directories. Full S3/overall completion cannot be claimed while they remain.
-No required work has been deferred to an unnamed future stage.
+Local cleanup reclaimed 521383928 bytes. The two remaining zero-byte cache
+markers and their empty parent directories were removed on 2026-10-04 through
+transaction `b3837759c401a82f28a9f1157e6f7063`. The updated installed cleanup helper
+verified generated provenance and empty-marker identities; the former external
+cleanup blocker is resolved. All B1-B7 criteria and original S3 delivery pass.
+Current admission behavior is explicitly superseded by the transactional admission
+specification; this does not alter the historical scripting qualification.
 
 The replacement retains a native request-owned binding but narrows the bundled
 Firefox adapter to main-document binding installation. Both its exported function

@@ -1,5 +1,6 @@
 import logging
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
     return_only_cookies: bool = False
     owui_api_key: str | None = None
     browser_locale: str | None = None
+    browser_queue_limit: int = Field(default=16, ge=1, le=64)
 
 
 settings = Settings()
@@ -39,3 +41,4 @@ RETURN_ONLY_COOKIES = settings.return_only_cookies
 
 OWUI_API_KEY = settings.owui_api_key
 BROWSER_LOCALE = settings.browser_locale
+BROWSER_QUEUE_LIMIT = settings.browser_queue_limit

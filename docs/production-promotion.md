@@ -33,16 +33,14 @@ clearance is not guaranteed and requires actual target evidence.
 | --- | --- | --- | --- |
 | Review and qualification | COMPLETE | P1-P2 | Reviewed source matches candidate image AST; real HTTP API/browser fixtures pass, including GET/form/JSON/status/cookies/replay/redirects; Prowlarr candidate proxy test 200; original and candidate live 1337x GET both return target 200 |
 | Production cutover and verification | COMPLETE | P3-P4 | Original port/name/network/DNS/Serve preserved; production Prowlarr proxy test 200; real JSON POST from Windows over Tailscale to httpbin returned target 200 and exact payload; healthy with no restarts/OOM/PID events; original pinned Compose/image retained for rollback; development container stopped |
-| Reconciliation and delivery | BLOCKED | P5 | Reviewed deployment artifacts committed/pushed; verification recorded; validation environment removed, but two empty cache markers remain because deletion was policy-blocked |
+| Reconciliation and delivery | COMPLETE | P5 | Reviewed deployment artifacts committed/pushed; verification recorded; validation environment removed; former empty-cache restriction resolved through reviewed cleanup on 2026-10-04 |
 
-Blocker (external, P5 cleanup): the cleanup helper misclassified UV's empty
-`.git` cache marker as a repository, and command policy rejected exact marker
-removal. Two zero-byte files (`.git`, `.gitignore`) and their empty parent
-directories remain under `D:\Temp\byparr-production-promotion\uv-cache\sdists-v9`.
-Cleanup completion requires permitted removal of those exact generated markers
-and empty parents. This does not block P1-P4 or the verified running deployment,
-but P5 and overall specification closure remain incomplete. The partial cleanup
-ticket was revoked rather than left active. Tracked deferrals: none.
+The former external P5 cleanup blocker was resolved on 2026-10-04. The cleanup
+helper had misclassified UV's empty `.git` marker as a repository, and command
+policy rejected its removal. Updated reviewed cleanup verified generated
+provenance and empty-marker identities before removing the two zero-byte files
+and empty parents. The obsolete partial ticket was revoked. Blockers: none.
+Tracked deferrals: none.
 
 ## Reviewed outcome (2026-10-03)
 
@@ -77,7 +75,9 @@ An attempted production fixture call received the documented 429 because the
 existing Paginas Amarillas crawler held the browser slot. Its real GETs continued
 to return 200. Final diagnostic requests were started at actual completion events;
 no client was paused and no timed retries or server queuing were introduced.
-Concurrent consumers must handle immediate 429 as busy. Production readiness
+That historical immediate-429 admission behavior was superseded on 2026-10-04
+by `transactional-admission-spec.md`: all consumers now wait in a bounded FIFO.
+Production readiness
 uses /ready; /health remains a browser operation and can occupy the same slot.
 
 The isolated development deployment helper previously required the original
@@ -92,11 +92,13 @@ evidence and capture/review a fresh baseline before the next development run.
 P1-P4 are satisfied and verified against the reviewed source, deployed runtime,
 real browser fixtures, existing Prowlarr integration and Tailscale HTTPS endpoint.
 Deployment artifacts were committed and pushed in `1e0ace6`. P5 evidence and
-delivery are satisfied; only the explicitly recorded cleanup blocker remains.
+delivery are satisfied. The former empty-cache cleanup blocker was resolved on
+2026-10-04 by reviewed transaction `b3837759c401a82f28a9f1157e6f7063`; the two
+zero-byte markers and empty parent directories are gone.
 Transactional cleanup deleted 420963179 logical bytes of task-owned validation
 files, including the disposable environment and linked cache names, without
-removing unrelated files or the shared link targets. The residual markers contain
-no data. No reboot, global Docker restart or Prowlarr restart was performed.
+removing unrelated files or the shared link targets. No residual markers remain.
+No reboot, global Docker restart or Prowlarr restart was performed.
 
 ## Production endpoints and recovery
 
@@ -108,16 +110,13 @@ no data. No reboot, global Docker restart or Prowlarr restart was performed.
 - Active Compose: `/opt/byparr/compose.yaml`; portable configuration is
   `compose.production.yaml` in this repository.
 - Compact private cutover evidence: `/opt/byparr/promotion-evidence.json`.
-- Development container `byparr-custom` remains stopped on its separate 8192 port.
+- The historical development container `byparr-custom` was removed during scripting cleanup.
 
-The original image and an exact Compose snapshot with its image pinned are
-retained specifically to restore the previous service if necessary. Rollback
-inside CT120 is:
+The original cutover retained an image and Compose snapshot for rollback. The
+user subsequently required source-based recovery and removal of superseded
+custom images, the development container and temporary rollback configuration.
+That original rollback procedure is no longer applicable.
 
-```sh
-cp /opt/byparr/compose.rollback-before-post.yaml /opt/byparr/compose.yaml
-docker compose -f /opt/byparr/compose.yaml up -d --no-deps --no-build --pull never byparr
-```
-
-This restores the previous runtime and configuration on the same endpoints.
-Do not delete the retained original image while this rollback procedure is needed.
+This is the historical POST promotion record. Current deployment/admission and
+source-based recovery are documented in `transactional-admission-spec.md`; no
+permanent superseded custom image is retained.

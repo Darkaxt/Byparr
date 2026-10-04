@@ -1,16 +1,17 @@
-import asyncio
 import logging
 import time
 from collections.abc import AsyncGenerator
 from typing import Annotated, NamedTuple, cast
 
-from fastapi import Header, HTTPException, Request
+from fastapi import Header, Request
 from invisible_playwright.async_api import InvisiblePlaywright
 from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel, Field
 
+from src.admission import BrowserAdmission
 from src.consts import (
     BROWSER_LOCALE,
+    BROWSER_QUEUE_LIMIT,
     LOG_LEVEL,
     PROXY_PASSWORD,
     PROXY_SERVER,
@@ -30,7 +31,7 @@ logger.setLevel(LOG_LEVEL)
 if len(logger.handlers) == 0:
     logger.addHandler(logging.StreamHandler())
 
-_browser_slot = asyncio.Lock()
+browser_admission = BrowserAdmission(BROWSER_QUEUE_LIMIT)
 
 
 class TimeoutTimer(BaseModel):
@@ -101,12 +102,8 @@ async def get_browser(
         http_request.state, "byparr_scripted", False
     )
 
-    if _browser_slot.locked():
-        raise HTTPException(
-            status_code=429, detail="Browser busy; no request was queued or submitted"
-        )
     async with (
-        _browser_slot,
+        browser_admission.transaction(http_request),
         InvisiblePlaywright(
             headless=True,
             proxy=proxy_config,

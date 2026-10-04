@@ -5,6 +5,10 @@ server instance, including testing, with server stability and disk hygiene as
 binding constraints. Existing production Byparr and its Prowlarr integration
 must remain untouched.
 
+Admission R6 was explicitly revised on 2026-10-04: all callers now wait in a
+bounded FIFO with no request flag. `transactional-admission-spec.md` is
+authoritative for this revised contract; original verification below is historical.
+
 ## Requirements and acceptance criteria
 
 - R1: Maintain a GitHub fork at Darkaxt/Byparr, with upstream provenance,
