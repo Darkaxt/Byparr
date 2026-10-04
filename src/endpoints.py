@@ -4,12 +4,14 @@ import time
 import warnings
 from http import HTTPStatus
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import Response, Route
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+from starlette.responses import JSONResponse
 
 from src.admission import wait_for_disconnect
 from src.challenge import challenge_present, solve_challenge
@@ -45,6 +47,16 @@ async def readiness() -> dict[str, object]:
     return {"status": "ok", "version": VERSION, "browser": browser_admission.status()}
 
 
+@router.get("/queue/{request_id}")
+async def queue_feedback(request_id: UUID) -> JSONResponse:
+    """Return this live request's current position without using a browser."""
+    feedback = browser_admission.feedback(str(request_id))
+    headers = {"Cache-Control": "no-store"}
+    if feedback is None:
+        raise HTTPException(404, "Request not tracked", headers=headers)
+    return JSONResponse(feedback, headers=headers)
+
+
 @router.get("/", include_in_schema=False)
 def read_root():
     """Redirect to /docs."""
@@ -74,8 +86,13 @@ async def read_item(
     request: LinkRequest, dep: BrowserDep, http_request: Request = None
 ) -> LinkResponse:
     """Handle POST requests."""
+    request_id = (
+        getattr(http_request.state, "byparr_request_id", None) if http_request else None
+    )
     if request.has_scripts:
-        return await _run_scripted_request(request, dep, http_request)
+        result = await _run_scripted_request(request, dep, http_request)
+        result.request_id = UUID(request_id) if request_id else None
+        return result
     start_time = int(time.time() * 1000)
     timer = TimeoutTimer(duration=request.max_timeout)
     request.url = request.url.replace('"', "").strip()
@@ -129,6 +146,7 @@ async def read_item(
     )
 
     return LinkResponse(
+        request_id=request_id,
         message="Success",
         solution=Solution(
             user_agent=user_agent,

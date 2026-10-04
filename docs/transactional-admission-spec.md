@@ -4,6 +4,8 @@ Authorized 2026-10-04: all requests wait their turn; no opt-in admission flag.
 This specification supersedes the earlier immediate busy-429 contract in the
 POST and scripting specifications. Browser scripting/Cloudflare compatibility
 investigation is separate; this change addresses confirmed consumer contention.
+The subsequent `queue-feedback-spec.md` adds live per-request feedback and
+documents the current deployment; qualification below records the FIFO release.
 
 ## Requirements
 

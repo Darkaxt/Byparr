@@ -6,6 +6,7 @@ import time
 from http.client import INTERNAL_SERVER_ERROR
 from typing import Any, Literal
 from urllib.parse import urlsplit
+from uuid import UUID
 
 from playwright.sync_api import Cookie
 from pydantic import (
@@ -27,6 +28,7 @@ MAX_SCRIPT_BYTES = 65536
 
 class LinkRequest(BaseModel):
     model_config = {"populate_by_name": True}
+    request_id: UUID | None = Field(default=None, alias="requestId")
 
     cmd: Literal["request.get", "request.post"] = Field(
         default="request.get",
@@ -197,6 +199,7 @@ class LinkResponse(BaseModel):
     end_timestamp: int = Field(default_factory=lambda: int(time.time() * 1000))
     version: str = consts.VERSION
     script_result: ScriptResult | None = Field(default=None, alias="scriptResult")
+    request_id: UUID | None = Field(default=None, alias="requestId")
 
     @model_serializer(mode="wrap")
     def serialize_optional_script_result(
@@ -207,6 +210,9 @@ class LinkResponse(BaseModel):
         if self.script_result is None:
             value.pop("scriptResult", None)
             value.pop("script_result", None)
+        if self.request_id is None:
+            value.pop("requestId", None)
+            value.pop("request_id", None)
         return value
 
     @classmethod

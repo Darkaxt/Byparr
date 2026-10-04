@@ -76,6 +76,7 @@ def main() -> int:
     assert ready["version"] in {
         "custom-post-scripting",
         "custom-post-scripting-queue",
+        "custom-post-scripting-queue-feedback",
     }, ready
     payload = {
         "cmd": "request.get",

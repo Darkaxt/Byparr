@@ -5,6 +5,7 @@ import contextlib
 import json
 from collections.abc import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
@@ -13,8 +14,101 @@ from starlette.testclient import TestClient
 
 from main import app
 from src.admission import BrowserAdmission
+from src.models import ScriptResult
 from src.utils import BrowserDepClass, get_browser
 from tests.post_test import dependency
+
+
+@pytest.mark.asyncio
+async def test_feedback_moves_with_fifo_and_forgets_finished_requests():
+    """Positions are live, exclude the owner, and vanish after leaving."""
+    admission = BrowserAdmission(3)
+    ids = [str(uuid4()) for _ in range(3)]
+    owner = admission.enter(ids[0])
+    first = admission.enter(ids[1])
+    second = admission.enter(ids[2])
+    assert admission.feedback(ids[2]) == {
+        "requestId": ids[2],
+        "state": "queued",
+        "position": 2,
+        "total": 2,
+        "queueLimit": 3,
+    }
+    with pytest.raises(HTTPException) as error:
+        admission.enter(ids[1])
+    assert error.value.status_code == 409  # noqa: PLR2004 - duplicate identity
+    admission.leave(first)
+    assert admission.feedback(ids[1]) is None
+    assert admission.feedback(ids[2])["position"] == 1
+    admission.leave(owner)
+    assert admission.feedback(ids[0]) is None
+    assert admission.feedback(ids[2]) == {
+        "requestId": ids[2],
+        "state": "active",
+        "position": 0,
+        "total": 0,
+        "queueLimit": 3,
+    }
+    admission.leave(second)
+    assert admission.feedback(ids[2]) is None
+    assert not admission.requests
+
+
+def test_feedback_endpoint_is_browser_free_and_uncached():
+    """Feedback itself never waits for or creates a browser."""
+    request_id = str(uuid4())
+    expected = {
+        "requestId": request_id,
+        "state": "queued",
+        "position": 3,
+        "total": 5,
+        "queueLimit": 16,
+    }
+    with (
+        patch("src.utils.InvisiblePlaywright") as factory,
+        patch("src.endpoints.browser_admission.feedback", return_value=expected),
+        TestClient(app) as client,
+    ):
+        response = client.get("/queue/" + request_id)
+        assert response.status_code == 200  # noqa: PLR2004
+        assert response.json() == expected
+        assert response.headers["cache-control"] == "no-store"
+        factory.assert_not_called()
+    with TestClient(app) as client:
+        assert client.get("/queue/" + request_id).status_code == 404  # noqa: PLR2004
+
+
+@pytest.mark.parametrize("scripted", [False, True])
+def test_request_identity_in_ordinary_and_scripted_responses(scripted):
+    """A supplied UUID is canonical and a legacy caller gets an automatic UUID."""
+    payload = {"url": "https://example.test"}
+    if scripted:
+        payload["script"] = "() => null"
+    request_id = str(uuid4())
+    app.dependency_overrides[get_browser] = dependency
+    session = MagicMock()
+    session.install = AsyncMock()
+    session.run = AsyncMock(return_value=ScriptResult(value=None))
+    session.close = AsyncMock()
+    try:
+        with (
+            patch("src.endpoints.challenge_present", AsyncMock(return_value=False)),
+            patch("src.endpoints.BrowserScript", return_value=session),
+            TestClient(app) as client,
+        ):
+            response = client.post("/v1", json={**payload, "requestId": request_id})
+            assert response.status_code == 200, response.text  # noqa: PLR2004
+            assert response.json()["requestId"] == request_id
+            assert response.headers["x-request-id"] == request_id
+            legacy = client.post("/v1", json=payload)
+            assert legacy.status_code == 200, legacy.text  # noqa: PLR2004
+            assert legacy.json()["requestId"] == legacy.headers["x-request-id"]
+            assert (
+                client.post("/v1", json={**payload, "requestId": "bad"}).status_code
+                == 422  # noqa: PLR2004 - invalid request identity
+            )
+    finally:
+        app.dependency_overrides.clear()
 
 
 def test_handoff_cannot_be_overtaken_and_queue_is_bounded():

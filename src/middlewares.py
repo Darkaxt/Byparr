@@ -1,6 +1,7 @@
 import time
 from http import HTTPStatus
 from json import JSONDecodeError
+from uuid import uuid4
 
 from fastapi import Request
 from pydantic import ValidationError
@@ -25,10 +26,12 @@ class LogRequest(BaseHTTPMiddleware):
                 status_code=422, content={"detail": "Invalid Byparr request"}
             )
         request.state.byparr_scripted = request_body.has_scripts
+        request.state.byparr_request_id = str(request_body.request_id or uuid4())
         logger.info(
             f"From: {request.client.host if request.client else 'unknown'} at {time.strftime('%Y-%m-%d %H:%M:%S')}: {request_body.url}"
         )
         response = await call_next(request)
+        response.headers["X-Request-ID"] = request.state.byparr_request_id
         process_time = time.perf_counter() - start_time
 
         if response.status_code == HTTPStatus.OK:

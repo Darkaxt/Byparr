@@ -9,6 +9,8 @@ helpers provide request-owned compatibility recipes without browser extensions.
 See the [browser scripting API and verified Uptodown recipe](docs/browser-scripting.md).
 All callers now wait transactionally, with no request flag. See the
 [admission contract and verification](docs/transactional-admission-spec.md).
+Use [per-request queue feedback](docs/queue-feedback.md) to query a waiting
+operation's current position without resubmitting it.
 Upstream usage instructions are retained below.
 
 <p align="center">

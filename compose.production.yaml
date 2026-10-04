@@ -1,6 +1,6 @@
 services:
   byparr:
-    image: sha256:38f540160714261a43a82a094c47440d9a4f02c24aed0b3967d150e0c3b758de
+    image: sha256:7da2c6b4295b1ac51bc5dca500ce9d5b800bf65d44c0b7e9bdfd700033314e51
     container_name: byparr
     restart: unless-stopped
     cpus: 1.0
@@ -17,7 +17,7 @@ services:
       PORT: 8191
       HOME: /tmp
       LOG_LEVEL: INFO
-      VERSION: custom-post-scripting-queue
+      VERSION: custom-post-scripting-queue-feedback
       TZ: Europe/Berlin
     ports: ["127.0.0.1:8191:8191"]
     networks: [lidarr-stack_default]
@@ -38,7 +38,7 @@ services:
       driver: json-file
       options: {max-size: "5m", max-file: "2"}
     labels:
-      io.darkaxt.byparr.source: "source-sha256:de6a249459cadb1b0c8bb86e6a4f94855d907d7f3cd0319b40f275176732b87f"
+      io.darkaxt.byparr.source: "source-sha256:f658bc623d4c9e5264010b72a46be0de496286160006f5516a5b561419b59cca"
 networks:
   lidarr-stack_default:
     external: true

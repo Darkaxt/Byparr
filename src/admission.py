@@ -22,6 +22,21 @@ class BrowserAdmission:
         self.limit = limit
         self.owner: asyncio.Future | None = None
         self.waiters: deque[asyncio.Future] = deque()
+        self.requests: dict[str, asyncio.Future] = {}
+
+    def feedback(self, request_id: str) -> dict[str, str | int] | None:
+        """Read current ownership/position atomically, with no browser or history."""
+        ticket = self.requests.get(request_id)
+        if ticket is None:
+            return None
+        active = ticket is self.owner
+        return {
+            "requestId": request_id,
+            "state": "active" if active else "queued",
+            "position": 0 if active else self.waiters.index(ticket) + 1,
+            "total": len(self.waiters),
+            "queueLimit": self.limit,
+        }
 
     def status(self) -> dict[str, bool | int]:
         """Expose counts, never target URLs, client identity or private output."""
@@ -31,8 +46,10 @@ class BrowserAdmission:
             "queueLimit": self.limit,
         }
 
-    def enter(self) -> asyncio.Future:
+    def enter(self, request_id: str | None = None) -> asyncio.Future:
         """Register atomically before yielding control to another request."""
+        if request_id is not None and request_id in self.requests:
+            raise HTTPException(409, "Request ID already active or queued")
         if self.owner is not None and len(self.waiters) >= self.limit:
             raise HTTPException(
                 503, "Browser queue full; no request was queued or submitted"
@@ -43,6 +60,8 @@ class BrowserAdmission:
             ticket.set_result(None)
         else:
             self.waiters.append(ticket)
+        if request_id is not None:
+            self.requests[request_id] = ticket
         return ticket
 
     def leave(self, ticket: asyncio.Future) -> None:
@@ -54,11 +73,18 @@ class BrowserAdmission:
         else:
             self.waiters.remove(ticket)
             ticket.cancel()
+        for request_id, tracked in self.requests.items():
+            if tracked is ticket:
+                del self.requests[request_id]
+                break
 
     @asynccontextmanager
     async def transaction(self, request: Request | None = None):
         """Acquire once, drop disconnected waiters, and release after cleanup."""
-        ticket = self.enter()
+        request_id = (
+            getattr(request.state, "byparr_request_id", None) if request else None
+        )
+        ticket = self.enter(request_id)
         disconnect = None
         try:
             if not ticket.done() and request is not None:
