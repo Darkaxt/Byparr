@@ -38,11 +38,11 @@ investigation is separate; this change addresses confirmed consumer contention.
 | --- | --- | --- |
 | T1 Admission contracts | COMPLETE | Q1-Q5: focused FIFO/no overtaking, disconnect/task cancellation including handoff, full-queue 503, launch failure/cancelled setup, driver-exit ordering and existing POST/script contracts pass |
 | T2 Real browser and original endpoint | COMPLETE | Q1-Q6: installed-runtime FIFO, real queued disconnect with zero submissions, 16-waiter overload, GET/scripted POST and native capture fixtures pass; original HTTPS held POST followed by queued scripted GET both return 200 once each; Prowlarr proxy test 200; limits/security/network preserved |
-| T3 Reconciliation and delivery | ACTIVE | Q7: documentation/configuration/reminder, final verification, cleanup, commit/push |
+| T3 Reconciliation and delivery | COMPLETE | Q7: source/configuration/docs committed and pushed in cd07c46; reminder inspected; final runtime-source/production verification and reviewed local/server cleanup pass |
 
-Only one stage is ACTIVE. The earlier zero-byte cache markers have been removed
+All stages are COMPLETE. The earlier zero-byte cache markers have been removed
 using freshly reviewed cleanup tickets. The scripting and promotion ledgers now
-record their resolved cleanup criteria. No tracked deferrals exist in T3.
+record their resolved cleanup criteria. Blockers: none. Tracked deferrals: none.
 
 T1 verification: the initial FIFO regression failed against the busy-429 code;
 the updated focused admission/POST/script contract checks and affected lint,
@@ -98,7 +98,7 @@ qualification of the Firefox upload patch, POST redirects, scripts and admission
 | Q4 | Real 16-waiter bound and pre-submission 503, with browser-free readiness responsive while the owner was held |
 | Q5 | Ownership futures and actual disconnect events; execution budget begins after browser allocation, with no queue deadline |
 | Q6 | Original endpoint and Prowlarr proxy test pass; runtime module hashes match reviewed source; production Compose, limits/security/network and Tailscale configuration preserved |
-| Q7 | Documentation/configuration reconciled and existing Monday 09:00 Europe/Berlin reminder updated; reviewed staging/test-container/superseded-image cleanup verified; source delivery remains T3's final step |
+| Q7 | Documentation/configuration reconciled and existing Monday 09:00 Europe/Berlin reminder updated; reviewed staging/test-container/superseded-image cleanup verified; source commit cd07c46 verified on origin/custom-post |
 
 Server cleanup removed 28 reviewed staging files (110950 bytes), their empty
 directories and the unused superseded scripting image. The test container was
@@ -107,6 +107,10 @@ removed before cutover. Compact evidence remains intentionally at
 after cleanup, and the original readiness endpoint returned 200. Independent
 host-wide memory/swap pressure delayed operator commands; no unrelated workload
 was stopped or modified.
+
+The original HTTPS endpoint also passed a focused actual Unicode JSON POST
+probe with its preflight cookie, actual target 503 and exactly one submission.
+This verifies the retained POST contract separately from queue ownership.
 
 Local reviewed cleanup transaction `1cba411dcdd7ceb50462e1a81f2cf919` removed the
 expendable environment and operator scripts (265158291 logical bytes), with no
