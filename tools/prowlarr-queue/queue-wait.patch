@@ -1,0 +1,34 @@
+diff --git a/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverr.cs b/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverr.cs
+--- a/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverr.cs
++++ b/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverr.cs
+@@ -3,6 +3,7 @@
+ using System.Linq;
+ using System.Net;
+ using System.Net.Http;
++using System.Threading;
+ using FluentValidation.Results;
+ using Newtonsoft.Json;
+ using NLog;
+@@ -172,6 +173,10 @@ private HttpRequest GenerateFlareSolverrRequest(HttpRequest request)
+             newRequest.Headers.ContentType = "application/json";
+             newRequest.Method = HttpMethod.Post;
+             newRequest.LogResponseContent = true;
+-            newRequest.RequestTimeout = TimeSpan.FromSeconds(Settings.RequestTimeout + 5);
++
++            // A queued solver owns the execution budget; waiting is not execution.
++            newRequest.RequestTimeout = Settings.WaitForQueue
++                ? Timeout.InfiniteTimeSpan
++                : TimeSpan.FromSeconds(Settings.RequestTimeout + 5);
+             newRequest.SetContent(req.ToJson());
+             newRequest.ContentSummary = req.ToJson(Formatting.None);
+diff --git a/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverrSettings.cs b/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverrSettings.cs
+--- a/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverrSettings.cs
++++ b/src/NzbDrone.Core/IndexerProxies/FlareSolverr/FlareSolverrSettings.cs
+@@ -30,3 +30,6 @@ public FlareSolverrSettings()
+         public int RequestTimeout { get; set; }
+-
++
++        [FieldDefinition(3, Label = "Wait for Solver Queue", Type = FieldType.Checkbox, Advanced = true, HelpText = "For queued solvers such as Byparr: wait for the response without a whole-request deadline. Request Timeout remains the solver execution budget.")]
++        public bool WaitForQueue { get; set; }
++
+         public NzbDroneValidationResult Validate()

@@ -11,13 +11,14 @@ SCRIPT = (
 
 
 class ServerMaintenanceTests(unittest.TestCase):
-    def test_reviewed_local_byparr_is_not_registry_updated(self):
+    def test_reviewed_local_solver_and_queue_client_are_not_registry_updated(self):
         calls = re.findall(r"^compose_update (\S+)", SCRIPT.read_text(), re.MULTILINE)
         self.assertNotIn("byparr", calls)
+        self.assertNotIn("prowlarr", calls)
         self.assertEqual(
             calls,
             [
-                "tor-proxy", "prowlarr", "unpackerr", "houndarr",
+                "tor-proxy", "unpackerr", "houndarr",
                 "audiomuse-ai", "tunelog", "lidaclips",
             ],
         )

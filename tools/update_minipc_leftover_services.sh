@@ -97,7 +97,8 @@ backup_copy_file /opt/tor-proxy/data/control_auth_cookie "$BACKUP_DIR/tor-proxy/
 compose_update tor-proxy /opt/tor-proxy tor-proxy
 # Byparr is a reviewed local build; update it through its source qualification workflow.
 log "Skipping registry update for locally built Byparr; retaining qualified image"
-compose_update prowlarr /opt/prowlarr prowlarr
+# Prowlarr carries the qualified queue-wait client patch; do not replace it with stock.
+log "Skipping registry update for queue-aware Prowlarr; retaining qualified image"
 compose_update unpackerr /opt/unpackerr unpackerr
 compose_update houndarr /opt/houndarr houndarr
 compose_update audiomuse-ai /opt/audiomuse-ai redis postgres audiomuse-ai worker
