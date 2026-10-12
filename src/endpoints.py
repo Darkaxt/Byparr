@@ -132,7 +132,10 @@ async def read_item(
             status_code=502, detail="Target navigation produced no HTTP response"
         )
 
-    cookies = await dep.context.cookies()
+    cookie_urls = [request.url]
+    if dep.page.url and dep.page.url not in cookie_urls:
+        cookie_urls.append(dep.page.url)
+    cookies = await dep.context.cookies(cookie_urls)
     content_type, response_content = await build_response_content(
         dep.page,
         request,

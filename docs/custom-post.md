@@ -124,5 +124,9 @@ any browser/dependency change against the redirect patch. Repeat the focused
 offline tests and bounded server fixture/API checks, compare production state,
 stop the test service, clean exact task-owned artifacts, then commit and push.
 Inherited GitHub Actions are disabled to avoid automatic nightly builds or
-publishing. The weekly reminder is a review reminder; it does not merge, deploy
-or publish changes automatically.
+publishing. The weekly Codex maintenance task is authorized to review, integrate,
+qualify, commit/push and deploy applicable updates without another routine
+approval. It preserves the qualified runtime and consumer contracts, restores
+the previous qualified service on failure, and removes temporary recovery
+artifacts after verification. See the [October 12 maintenance record](maintenance-2026-10-12.md)
+for the reviewed upstream boundary and current deployment.
