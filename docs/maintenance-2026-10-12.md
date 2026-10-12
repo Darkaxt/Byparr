@@ -56,7 +56,7 @@ the complete upstream main is reviewed, not recorded as fully merged.
 | Stage | Status | Criteria | Evidence |
 | --- | --- | --- | --- |
 | Compatible integration and qualification | COMPLETE | M1; M2 controlled fixtures | Reviewed selective integration; old-image regressions fail and candidate checks pass; installed cookie/GET/POST/redirect/replay/script/CSP/frame/cleanup fixtures and real HTTP FIFO/feedback/disconnect/overload checks pass with no OOM or PID-limit events |
-| Production delivery and cleanup | ACTIVE | M2 original-endpoint Uptodown; M3-M4 | Live Uptodown/native APK and Prowlarr proxy pass; deployed service healthy; staging/test containers/superseded image removed; final commit/push remains |
+| Production delivery and cleanup | COMPLETE | M2 original-endpoint Uptodown; M3-M4 | Live Uptodown/native APK and Prowlarr proxy pass; deployed service healthy; staging/test containers/superseded image removed; verified implementation 3ee93e4 committed and pushed to origin/custom-post |
 
 Blockers: none after Tailscale SSH reauthentication. Tracked deferrals: none.
 Runtime upgrades excluded above are review decisions, not claims of delivered
@@ -141,4 +141,9 @@ evidence is under repository `local-evidence/maintenance-20261012`.
 After cleanup the original HTTPS readiness endpoint returns 200, and a fresh
 browser GET returns API ok, target 200 and the expected document. Docker reports
 healthy, zero restarts and no OOM kill. There are no unresolved verification
-blockers or tracked deferrals; commit/push is the remaining delivery action.
+blockers or tracked deferrals. Implementation commit `3ee93e4` is verified on
+origin/custom-post, including delivery of the earlier verified Prowlarr client
+commit `703df0d`. GitHub Actions remain disabled. The final read-only server check
+confirms the new image is healthy with zero restarts/OOM and the original Prowlarr
+identity/image; host memory PSI averages are zero. Both stages are COMPLETE;
+M1-M4 are satisfied, with the runtime exclusions above stated explicitly.
