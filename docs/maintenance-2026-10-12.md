@@ -147,3 +147,15 @@ commit `703df0d`. GitHub Actions remain disabled. The final read-only server che
 confirms the new image is healthy with zero restarts/OOM and the original Prowlarr
 identity/image; host memory PSI averages are zero. Both stages are COMPLETE;
 M1-M4 are satisfied, with the runtime exclusions above stated explicitly.
+
+## Weekly review, 2026-10-19
+
+Reviewed upstream `4e4e76f..5c3681129d02c849b50bfd621c1333cc8d51ce10`:
+`405a45b` updates Playwright to 1.64 and `5c36811` updates test-only httpx2/httpcore2
+to 2.14. The complete delta changes only dependency declarations and their lockfile;
+there is no application, adapter, admission or consumer fix to integrate into the
+qualified immutable runtime. The runtime-upgrade exclusions above still apply.
+No application/deployment configuration or live service was changed, and no
+build, restart, replacement or recovery was needed. The original HTTPS endpoint
+passed browser-free readiness and a fresh browser GET (API ok, target 200,
+expected document). No new actionable condition or task-generated scratch exists.
