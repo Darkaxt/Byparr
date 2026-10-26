@@ -159,3 +159,16 @@ No application/deployment configuration or live service was changed, and no
 build, restart, replacement or recovery was needed. The original HTTPS endpoint
 passed browser-free readiness and a fresh browser GET (API ok, target 200,
 expected document). No new actionable condition or task-generated scratch exists.
+
+## Weekly review, 2026-10-26
+
+Reviewed upstream `5c36811..96e49b71a18f1cd8cb8ae1779f3de9076b6a22ee`:
+`94ae1e7` and `96e49b7` update test-only httpx2/httpcore2 through 2.16. The complete
+delta affects only test dependency declarations and lockfile package records;
+application, browser, adapter, admission and consumer code are unchanged. Retain
+the test-client versions used by the existing qualification profile, consistently
+with the previous review; these updates supply no production behavior change to
+deploy. No build, restart, deployment, release or recovery was performed. Original
+HTTPS readiness and one fresh browser GET passed (API ok, target 200, expected
+document). No production configuration or saved consumer settings were edited,
+and no expendable task scratch was generated.
