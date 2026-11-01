@@ -80,13 +80,12 @@ the previous valid database rather than publishing the incomplete replacement.
 
 | Stage | Status | Acceptance | Current evidence / advancement blockers |
 | --- | --- | --- | --- |
-| Cohesive repair, installed qualification and delivery | ACTIVE | A1-A5 | A1-A4 verified, candidate delivered and accepted; A5 source synchronization and exact cleanup remain |
+| Cohesive repair, installed qualification and delivery | COMPLETE | A1-A5 | Root causes reproduced; installed and original-endpoint acceptance passed; private service delivered, source synchronized and exact cleanup verified |
 
-Internal advancement blockers: A5 final source synchronization and cleanup remain
-outstanding. The two original plan rows are consolidated because qualification
+The two original plan rows were consolidated because qualification
 must cover the complete connected fix, including both causes, before acceptance.
-No required criteria were removed. Resolve within the single ACTIVE stage;
-the stage is not parked. No tracked deferrals.
+No required criteria were removed. All acceptance criteria passed within this
+single stage. Blockers: none. Tracked deferrals: none.
 
 Candidate `sha256:6449088f52aca11c19bc55d1a7a5531b6cdb13bf9a531aa2a1068da55ea9823e`
 passes the real-reader cache lifecycle tests (the previous image fails their
@@ -166,6 +165,34 @@ review/requalify rather than bypassing them. Future GeoIP growth can exceed a
 bounded refresh budget, but failed publication retains the valid cache. Source
 recovery uses the recorded commit, pinned base and production Compose; obsolete
 custom images are retained only during an active replacement transaction.
+
+## Final reconciliation
+
+- A1 satisfied: inspected launch/profile/cache and reproduced the false timeout
+  with terminal DOM/screenshot evidence, without blaming an unobserved browser flag.
+- A2 satisfied: installed-reader tests reject truncated/invalid data, retain the
+  valid cache on ENOSPC/refresh failure and prove atomic publication. Rendered
+  browser checks prove real interstitial detection and background-script clearance.
+- A3 satisfied: all three exact reported build pages passed original-endpoint
+  API/target 200 with correct content and unchanged solve budgets.
+- A4 satisfied: actual browser/HTTP preservation fixtures and fresh original
+  Uptodown/native APK verification passed. Prowlarr proxy test passed with its
+  original identity, image and saved settings unchanged.
+- A5 satisfied: candidate accepted after supervised recovery was itself exercised.
+  Live Compose matches `compose.production.yaml` exactly. Implementation commit
+  `0d389c05156b44a6d6a0ca8a4b1ee4c8573e4d2b` was pushed and read back from
+  origin/custom-post; its shipped-source hashes match the installed manifest.
+  Actual delivered image is healthy with zero restarts/OOM; readiness is 200.
+
+The unused earlier trial image and superseded October 12 custom image were
+removed through native Docker after checking consumers and closing recovery.
+Task Docker containers/volumes are absent. Transaction
+`b6359416469609b87050bd02e5890d84` removed all 17 reviewed local scratch members,
+12056255 logical bytes, including the test APK and one-off scripts, with no
+exclusions/errors/residuals. Compact cleanup/final-verification receipts and
+the necessary diagnostic/qualification evidence remain in the D: evidence folder.
+Source-based recovery uses this implementation commit and pinned immutable base;
+no permanent rollback image or unrelated Docker pruning was introduced.
 
 The installed recall helper currently fails its cache refresh with SQLite
 `database is locked`, even though its thread status is unlocked. No refresh is
