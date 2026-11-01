@@ -1,6 +1,6 @@
 services:
   byparr:
-    image: sha256:c4d4b0cd1851cc9d222a7ed1fe3bb4c956abc10b8fd4363043edf505166b3b2d
+    image: sha256:6449088f52aca11c19bc55d1a7a5531b6cdb13bf9a531aa2a1068da55ea9823e
     container_name: byparr
     restart: unless-stopped
     cpus: 1.0
@@ -24,7 +24,7 @@ services:
     tmpfs:
       - /tmp:rw,nosuid,nodev,size=256m,mode=1777
       - /cache/invisible-playwright/fonts:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
-      - /cache/invisible-playwright/geoip:rw,nosuid,nodev,size=128m,uid=1000,gid=1000
+      - /cache/invisible-playwright/geoip:rw,nosuid,nodev,size=256m,uid=1000,gid=1000
       - /cache/mozilla:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
       - /cache/fontconfig:rw,nosuid,nodev,size=8m,uid=1000,gid=1000
       - /cache/mesa_shader_cache:rw,nosuid,nodev,size=16m,uid=1000,gid=1000
@@ -38,7 +38,7 @@ services:
       driver: json-file
       options: {max-size: "5m", max-file: "2"}
     labels:
-      io.darkaxt.byparr.source: "source-sha256:6daa5767c2bb02a8e9d1ee5c282ed5f61d5b92de1d357bd66fef08f2d168c6c4"
+      io.darkaxt.byparr.source: "source-sha256:8674c816df469e72ced6f6b7d57fed3638745ce971127d32cd16aef92544dedd"
 networks:
   lidarr-stack_default:
     external: true

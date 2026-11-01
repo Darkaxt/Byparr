@@ -14,7 +14,7 @@ paths = [
     *sorted((root / "tests").glob("*integration.py")),
     root / "Dockerfile.custom",
     root / "compose.custom.yaml",
-    root / "runtime/patch_firefox_redirects.py",
+    *sorted((root / "runtime").glob("patch_*.py")),
 ]
 packet = {
     p.relative_to(root).as_posix(): base64.b64encode(p.read_bytes()).decode()

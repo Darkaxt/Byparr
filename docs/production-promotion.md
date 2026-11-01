@@ -120,3 +120,11 @@ That original rollback procedure is no longer applicable.
 This is the historical POST promotion record. Current deployment/admission and
 source-based recovery are documented in `transactional-admission-spec.md`; no
 permanent superseded custom image is retained.
+
+The 2026-11-01 deployed challenge/GeoIP repair and current image/source pins are
+recorded in `apkmirror-profile-spec.md` and `compose.production.yaml`. All builds
+must apply `runtime/patch_geoip.py` alongside both Firefox adapter patches.
+Its exact-source guards require review on runtime changes; qualify cache refresh
+failure/atomic publication and the installed browser before replacing production.
+The 256 MiB GeoIP tmpfs permits old+new database publication within the unchanged
+2 GiB service limit; a mere cache-file existence check is insufficient.

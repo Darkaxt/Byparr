@@ -5,12 +5,17 @@ from contextlib import suppress
 from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import FloatRect, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
-from playwright_captcha.solvers.click.cloudflare.utils.detection import (
-    CF_INTERSTITIAL_INDICATORS_SELECTORS,
-    detect_cloudflare_challenge,
-)
 
 from src.utils import TimeoutTimer, logger
+
+# Background scripts also occur on successfully loaded Cloudflare-protected pages.
+# Unknown challenge-platform scripts remain conservative interstitial indicators.
+CF_INTERSTITIAL_INDICATORS_SELECTORS = [
+    (
+        'script[src*="/cdn-cgi/challenge-platform/"]'
+        ':not([src*="/scripts/precursor/"]):not([src*="/scripts/jsd/"])'
+    ),
+]
 
 __all__ = [
     "CF_INTERSTITIAL_INDICATORS_SELECTORS",
@@ -34,7 +39,15 @@ WIDGET_MAX_HEIGHT = 120
 
 async def challenge_present(page: Page) -> bool:
     """Report whether the Cloudflare interstitial is up."""
-    return await detect_cloudflare_challenge(page, "interstitial")
+    try:
+        for selector in CF_INTERSTITIAL_INDICATORS_SELECTORS:
+            if await page.locator(selector).count():
+                return True
+    except PlaywrightError:
+        # Navigation can destroy a context between observations; that is not
+        # evidence that the challenge has cleared.
+        return True
+    return False
 
 
 async def widget_box(page: Page) -> FloatRect | None:
