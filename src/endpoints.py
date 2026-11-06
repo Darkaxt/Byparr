@@ -9,12 +9,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from playwright.async_api import Error as PlaywrightError
-from playwright.async_api import Response, Route
+from playwright.async_api import Frame, Response, Route
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from starlette.responses import JSONResponse
 
 from src.admission import wait_for_disconnect
-from src.challenge import challenge_present, solve_challenge
+from src.challenge import (
+    challenge_present,
+    edgeone_verification_present,
+    javascript_redirect_present,
+    solve_challenge,
+    solve_edgeone,
+)
 from src.consts import VERSION
 from src.content import build_response_content
 from src.models import (
@@ -344,27 +350,78 @@ async def _navigate_and_solve(
     request: LinkRequest,
     timer: TimeoutTimer,
 ) -> tuple[bool, str | None, object]:
-    """Navigate to the URL, then solve a challenge or wait for network idle."""
-    page_html: str | None = None
+    """Return the completed document, following recognized challenge transitions."""
     page_request = await dep.page.goto(
         request.url,
         timeout=remaining_ms(timer),
         **({"wait_until": "domcontentloaded"} if request.has_scripts else {}),
     )
+    challenged = False
+    edgeone_attempted = False
+    committed = asyncio.Event()
+
+    def document_committed(frame: Frame) -> None:
+        if frame == dep.page.main_frame:
+            committed.set()
+
+    # Observe before inspecting markup: same-URL reloads are transitions too.
+    dep.page.on("framenavigated", document_committed)
+    try:
+        while True:
+            committed.clear()
+            try:
+                if await edgeone_verification_present(dep.page):
+                    if edgeone_attempted:
+                        raise HTTPException(
+                            408,
+                            "EdgeOne challenge unresolved after one verification attempt",
+                        )
+                    edgeone_attempted = True
+                    challenged = True
+                    await solve_edgeone(dep.page, timer, committed)
+                    continue
+                detected, page_html = await _settle_document(
+                    dep, request, timer, committed
+                )
+            except PlaywrightError:
+                if not committed.is_set():
+                    raise
+                continue
+            challenged |= detected
+            if page_html is not None:
+                return challenged, page_html, page_request
+    finally:
+        dep.page.remove_listener("framenavigated", document_committed)
+
+
+async def _settle_document(
+    dep: BrowserDep,
+    request: LinkRequest,
+    timer: TimeoutTimer,
+    committed: asyncio.Event,
+) -> tuple[bool, str | None]:
+    """Inspect one document; None means its transition must be inspected again."""
     await dep.page.wait_for_load_state(
         state="domcontentloaded", timeout=remaining_ms(timer)
     )
-
-    if not await challenge_present(dep.page):
-        if not request.has_scripts:
-            await _wait_for_networkidle(dep, timer)
-        page_html = await dep.page.content()
-        return False, page_html, page_request
-
-    await solve_challenge(dep.page, timer)
+    if await javascript_redirect_present(dep.page):
+        logger.info("JavaScript cookie interstitial; awaiting its navigation")
+        await asyncio.wait_for(committed.wait(), timeout=timer.remaining())
+        return True, None
+    challenged = await challenge_present(dep.page)
+    if challenged:
+        await solve_challenge(dep.page, timer)
     if not request.has_scripts:
         await _wait_for_networkidle(dep, timer)
-    return True, page_html, page_request
+    if (
+        committed.is_set()
+        or await javascript_redirect_present(dep.page)
+        or await challenge_present(dep.page)
+        or await edgeone_verification_present(dep.page)
+    ):
+        return challenged, None
+    page_html = await dep.page.content()
+    return challenged, None if committed.is_set() else page_html
 
 
 async def _wait_for_networkidle(dep: BrowserDep, timer: TimeoutTimer) -> None:

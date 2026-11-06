@@ -1,3 +1,4 @@
+import asyncio
 import time
 from asyncio import sleep
 from contextlib import suppress
@@ -6,7 +7,7 @@ from playwright.async_api import Error as PlaywrightError
 from playwright.async_api import FloatRect, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from src.utils import TimeoutTimer, logger
+from src.utils import TimeoutTimer, logger, remaining_ms
 
 # Background scripts also occur on successfully loaded Cloudflare-protected pages.
 # Unknown challenge-platform scripts remain conservative interstitial indicators.
@@ -20,7 +21,10 @@ CF_INTERSTITIAL_INDICATORS_SELECTORS = [
 __all__ = [
     "CF_INTERSTITIAL_INDICATORS_SELECTORS",
     "challenge_present",
+    "edgeone_verification_present",
+    "javascript_redirect_present",
     "solve_challenge",
+    "solve_edgeone",
 ]
 
 POLL_INTERVAL = 0.25
@@ -48,6 +52,58 @@ async def challenge_present(page: Page) -> bool:
         # evidence that the challenge has cleared.
         return True
     return False
+
+
+async def javascript_redirect_present(page: Page) -> bool:
+    """Recognize the empty cookie/reload interstitial, without executing its code."""
+    body = page.locator("body")
+    if await body.count() == 0 or await body.locator(":scope > *").count():
+        return False
+    if (await body.text_content() or "").strip():
+        return False
+    # Native text_content works under CSP. Bulk evaluation is blocked, while
+    # :has-text deliberately excludes script-node contents in Playwright.
+    scripts = page.locator("script:not([src])")
+    for index in range(await scripts.count()):
+        source = await scripts.nth(index).text_content() or ""
+        if all(
+            marker in source
+            for marker in ("__tst_status", "EO_Bot_Ssid", "setTimeout", "location")
+        ):
+            return True
+    return False
+
+
+async def edgeone_verification_present(page: Page) -> bool:
+    """Recognize the observed verification document, including its loading state."""
+    if await page.title() != "Security Verification":
+        return False
+    if await page.locator("#captcha").count() == 0:
+        return False
+    text = await page.locator("body").text_content() or ""
+    return "Protected by Tencent Cloud EdgeOne" in " ".join(text.split())
+
+
+async def solve_edgeone(
+    page: Page, timer: TimeoutTimer, committed: asyncio.Event
+) -> None:
+    """Activate the verified native control once, or follow natural navigation."""
+    checkbox = page.frame_locator("#tcaptcha_iframe_eo").locator("#verifyCheckbox")
+    click = asyncio.create_task(checkbox.click(timeout=remaining_ms(timer)))
+    navigation = asyncio.create_task(committed.wait())
+    try:
+        done, _ = await asyncio.wait(
+            (click, navigation), return_when=asyncio.FIRST_COMPLETED
+        )
+        if navigation not in done:
+            await click
+            logger.info("Activated EdgeOne verification; awaiting its navigation")
+            await asyncio.wait_for(navigation, timeout=timer.remaining())
+    finally:
+        for task in (click, navigation):
+            if not task.done():
+                task.cancel()
+        await asyncio.gather(click, navigation, return_exceptions=True)
 
 
 async def widget_box(page: Page) -> FloatRect | None:

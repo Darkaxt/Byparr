@@ -197,7 +197,7 @@ Current maintenance acceptance:
 
 | Stage | Status | Criteria | Evidence / remaining acceptance |
 | --- | --- | --- | --- |
-| Weekly compatible integration and verification | BLOCKED | W1-W3 | W1 and lock/original-endpoint parts of W2 verified; W3 scratch cleanup complete and reviewed source prepared for synchronization; W2 administrative inspection requires renewed Tailscale authentication |
+| Weekly compatible integration and verification | COMPLETE | W1-W3 | Lock update delivered in 4127ca0; cleanup complete; the Nov 6 authenticated repair's image/resource/Prowlarr/update-exclusion verification closes the former W2 blocker |
 
 `6be4b57` is selected for the test dependency setuptools 84.0.0 -> 84.2.1.
 Its title says 84.1.0, but the actual reviewed patch installs 84.2.1; use the
@@ -230,7 +230,7 @@ remain unverified. No administrative server command, deployment or recovery has
 been performed. Both task-owned pending SSH checks were closed; no waiting
 administrative operation remains to be resumed or duplicated.
 
-External blocker: W2's fresh Docker image/resource and Prowlarr identity, settings
+External blocker recorded November 2: W2's fresh Docker image/resource and Prowlarr identity, settings
 and updater-pin inspection cannot run until Tailscale SSH reauthentication for
 root@100.74.127.101 is completed. Overall maintenance verification remains
 incomplete. Next action after authentication: inspect the actual existing Byparr
@@ -250,3 +250,14 @@ remain intentionally in the D: evidence folder. The recall helper again reported
 SQLite `database is locked`; status confirms a stale, unlocked cache. No recall
 refresh or SSH operation remains running. Visible history, current repository
 diffs and live HTTP evidence were used instead of claiming fresh cached recall.
+
+Resolved November 6 after the user completed the actual Tailscale authentication
+check. The JavaScript/EdgeOne repair's installed-source/image/resource checks,
+unchanged Prowlarr identity/start time/restart count/image and saved host/120-second
+budget/waitForQueue settings, actual proxy test 200 and unchanged updater checksum
+`e038e9c12e41f8d045c041d69a2db1267bbaaac8df271dac9637baf1cc366bda` satisfy W2.
+The existing stock-registry exclusions and routing are preserved. Current Byparr
+image/source pins are in `compose.production.yaml`; verification is recorded in
+`javascript-interstitial-spec.md` and its private delivery receipts. W1-W3 are
+now satisfied; no weekly maintenance blocker or tracked deferral remains. This
+resolution did not perform a dependency/browser/client upgrade or unrelated rollout.

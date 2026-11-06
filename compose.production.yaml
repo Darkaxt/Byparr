@@ -1,6 +1,6 @@
 services:
   byparr:
-    image: sha256:6449088f52aca11c19bc55d1a7a5531b6cdb13bf9a531aa2a1068da55ea9823e
+    image: sha256:38c5c5c3910df6dc60b35168086901d42985d6dee4ca7eee29aa69f98f029020
     container_name: byparr
     restart: unless-stopped
     cpus: 1.0
@@ -38,7 +38,7 @@ services:
       driver: json-file
       options: {max-size: "5m", max-file: "2"}
     labels:
-      io.darkaxt.byparr.source: "source-sha256:8674c816df469e72ced6f6b7d57fed3638745ce971127d32cd16aef92544dedd"
+      io.darkaxt.byparr.source: "source-sha256:e8de629c37593d021671cf8a816b7e8d0ec4130dff18804980d5cb7bb882b646"
 networks:
   lidarr-stack_default:
     external: true
