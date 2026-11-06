@@ -38,14 +38,14 @@ version substitution or downloader validation change is part of this repair.
 
 | Stage | Status | Requirements | Evidence / remaining acceptance |
 | --- | --- | --- | --- |
-| Integrated interstitial repair and private delivery | ACTIVE | J1-J5 | J1-J4 verified; qualified candidate accepted on original endpoint; J5 source synchronization, exact cleanup and completion report remain |
+| Integrated interstitial repair and private delivery | COMPLETE | J1-J5 | Installed-browser and actual HTTP checks pass; original-endpoint APKPure, Uptodown and Prowlarr verified; source pushed, private delivery accepted, exact cleanup applied and completion report sent |
 
-No tracked deferrals. J5 source synchronization, exact cleanup and the requested
-completion report remain; they are being resolved within this single stage.
+No blockers or tracked deferrals remain. All J1-J5 acceptance criteria are
+satisfied by the evidence and final reconciliation below.
 The earlier weekly administrative verification is satisfied by this delivery's
 fresh image/resource/consumer/update-exclusion checks.
 
-Production source label is
+Pre-repair production source label was
 `source-sha256:8674c816df469e72ced6f6b7d57fed3638745ce971127d32cd16aef92544dedd`.
 The existing Tailscale authentication check was completed by the user; original
 SSH operation 96315 completed successfully and was not replayed.
@@ -72,8 +72,9 @@ because Playwright `:has-text` excludes script contents. An installed adapter
 probe establishes the correct DOM path: native `text_content` and `inner_html`
 both read the script under strict CSP, while bulk evaluation fails and has-text
 counts zero. The implementation uses native text_content, with no CSP bypass for
-ordinary requests. These are unresolved implementation findings, not accepted
-releases; production was restored after each isolated check and is healthy.
+ordinary requests. Those intermediate findings were resolved before acceptance;
+the intermediate candidates were not promoted. Production was restored after
+each isolated check.
 
 The cookie-only native-text candidate passed the initial browser fixture: final 200/503
 documents, same-URL reload, blocked-script timeout, cancellation/cleanup before
@@ -135,7 +136,7 @@ Fresh original-endpoint Uptodown Showly 3.72.0/file 1220892131 verification pass
 pre-transfer attachment capture, native HTTP 200, 12004991-byte original APK,
 SHA-256 `f0fac7fc5474168ca982fd220361f3bbb76d4f4f3ed9e89cf03d2465d2b77074`.
 Only sanitized proof is retained; temporary signed response/cookies and the test
-APK remain in the exact cleanup root until its final consumer exits.
+APK were removed after the final consumer exited, as verified below.
 
 Prowlarr proxy test returns 200. Its identity, start time/restart count, queue-aware
 image, saved host/120-second execution budget/waitForQueue option are unchanged.
@@ -154,3 +155,36 @@ verification reloads. Recognition is based on observed challenge structure rathe
 than a hostname recipe or background scripts alone. No provider registry, public
 command language, persistence layer or additional browser owner was added.
 No consolidation is required to satisfy this scope.
+
+## Final reconciliation
+
+- J1: Original installed-source manifest matched; actual-browser timing trace
+  demonstrates the premature return and subsequent reload. The original handoff
+  and captured HTML remain untouched.
+- J2: Complete integrated navigation/recognition/native-input handling is shipped
+  in the accepted immutable image. Controlled unresolved challenges fail explicitly;
+  ordinary and scripted final URL/status/body and explicit POST replay are verified.
+- J3: Current-image installed-browser and actual HTTP evidence verifies complete
+  interstitial flows, cancellation/cleanup, FIFO, disconnect and UUID feedback.
+  Unchanged adapter/helper checks remain applicable as recorded above.
+- J4: Original-endpoint fresh APKPure listing, Uptodown resolution/native original
+  APK and Prowlarr proxy checks passed. Installed source, image, Compose, resource,
+  security, private routing, consumer identity/settings and updater protections
+  were checked against the accepted configuration. Production is healthy, with
+  zero restarts/no OOM; the installed GeoIP database is valid.
+- J5: Implementation/configuration commit
+  `b2cd763464c4fe87d36573b2a1b7f90d14c277c0` was pushed and read back from
+  `origin/custom-post`. Final replacement required no rollback; earlier isolated
+  failures restored production and checked readiness. All task containers/volumes
+  and superseded custom images were removed after acceptance. Windows cleanup
+  transaction `9d25c5f1705e2d52332d8cd6b3f36e84` is `applied`: 47 exact reviewed
+  files, 12420249 bytes, no errors/residual helper files; the E: staging root is
+  absent. The full completion report was sent successfully to the existing
+  `Morphe Extended` chat (`01a101b0-60c8-7323-b675-61d19ddd5a5b`).
+
+Completion report: `D:/Artifacts/Byparr/2026-11-06-apkpure/completion-report.md`.
+Inspected final runtime/source/remote evidence:
+`final-verification-commit.json`; exact cleanup receipt: `cleanup.json` in the
+same retained evidence directory. This documentation-only closure does not alter
+the shipped sources or invalidate the inspected runtime verification. Private
+deployment is the established delivery channel; no external release was created.
