@@ -284,9 +284,9 @@ Acceptance:
 
 | Stage | Status | Criteria | Evidence / remaining acceptance |
 | --- | --- | --- | --- |
-| Compatible review, verification and source delivery | ACTIVE | N1-N3 | N1-N2 verified; exact cleanup applied; only source synchronization remains |
+| Compatible review, verification and source delivery | COMPLETE | N1-N3 | Upstream selection verified and pushed in fb5f2ed; actual original endpoint/Prowlarr/pins/protections pass; exact cleanup applied; no runtime replacement needed |
 
-No tracked deferrals. N3 source synchronization remains in this stage.
+Blockers: none. Tracked deferrals: none. N1-N3 are satisfied and verified.
 
 Review decisions:
 
@@ -376,3 +376,14 @@ no exclusions/errors. The exact E: root is absent. No Docker staging, test
 container, volume, new image or recovery artifact was created by this review.
 Compact `verification.json`, `browser-proof.json`, `cleanup.json` and the launcher
 preflight receipt remain under the D: evidence directory for maintenance provenance.
+
+Final reconciliation: N1 is satisfied by the complete reviewed range, exact
+selected upstream workflow files and explicit exclusions. N2 is satisfied by
+inspected source comparisons, original-endpoint browser/readiness/feedback and
+actual installed-resource/Prowlarr/updater-manifest verification. N3 is satisfied
+by applied exact cleanup and commit `fb5f2edce92cdac42e1c13a3855b82ef89f228b4`,
+pushed and independently read back from origin/custom-post. No current actionable
+availability/data-integrity defect or external blocker was found. Production
+remains on the accepted private image; no deployment, restart, recovery or external
+release occurred. This final documentation-only reconciliation leaves all runtime
+evidence applicable and requires no repeated browser qualification.
