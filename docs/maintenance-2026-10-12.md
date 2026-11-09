@@ -261,3 +261,118 @@ image/source pins are in `compose.production.yaml`; verification is recorded in
 `javascript-interstitial-spec.md` and its private delivery receipts. W1-W3 are
 now satisfied; no weekly maintenance blocker or tracked deferral remains. This
 resolution did not perform a dependency/browser/client upgrade or unrelated rollout.
+
+## Weekly review, 2026-11-09
+
+Authorization: already_authorized. Review range:
+`3d34b33ff82ec6e087eb21dd7449efee2062960a..c81385f59ec978ef81909a273e514ca6d9ace2a9`.
+Preflight worktree is clean; local/origin custom-post both identify `0f3fa0f`.
+The November 6 immutable APKPure/EdgeOne deployment and all existing browser,
+POST, scripting, admission/feedback and Prowlarr contracts remain authoritative.
+
+Acceptance:
+
+- N1: Review every upstream change and integrate compatible source changes with
+  exact provenance; document runtime-dependent exclusions without claiming a merge.
+- N2: Verify selected workflow pins against upstream and unchanged runtime inputs.
+  Inspect the actual original endpoint with a safe browser GET and browser-free
+  readiness. Verify installed image/resources/security/routing, original Prowlarr
+  pin/identity/settings and updater protections through authenticated administration.
+- N3: Commit/push the verified result, preserve disabled external publication and
+  remove exact expendable scratch. Avoid replacement/recovery or a new image when
+  application, runtime, adapter, client and production configuration are unchanged.
+
+| Stage | Status | Criteria | Evidence / remaining acceptance |
+| --- | --- | --- | --- |
+| Compatible review, verification and source delivery | ACTIVE | N1-N3 | N1-N2 verified; exact cleanup applied; only source synchronization remains |
+
+No tracked deferrals. N3 source synchronization remains in this stage.
+
+Review decisions:
+
+- `93ffe3e` and `d28db93`: select the immutable action revisions and cosign-installer
+  4.1.3 in the two existing Docker workflows. These files match upstream exactly;
+  triggers, permissions, steps and publication policy are otherwise unchanged.
+  Repository Actions remain disabled; no dispatch or external release is authorized.
+- `406ad42`: exclude the GeoIP warm-up/memoization implementation tied to
+  invisible-core 49.46+/55.50 private seams and three-argument `prepare_session_geo`.
+  Production remains on 20.15.0 with the inspected two-argument API and existing
+  validated atomic cache patch. Importing the newer `SessionLocale`/`SessionGeo`
+  assumptions would break that qualified runtime; no current failing lookup or
+  performance bottleneck establishes a reason to backport new caching machinery.
+  Retain current browser-free readiness semantics rather than add startup network
+  dependencies. Its associated newer-runtime tests/docs are not independently
+  applicable to this deployment.
+- `b041dd2`: the subreaper flag addresses tini when it is not PID 1 in shared-PID
+  pods. Actual production `/proc/1/cmdline` is tini; upstream explicitly says the
+  flag changes nothing at PID 1. This private deployment has no shared-PID pod.
+  No rebuild or dormant Dockerfile change is needed for that absent topology.
+- `c18a7aa`: production already mounts only bounded writable cache subdirectories,
+  preserving the baked browser under /cache; generic fork Compose has no /cache
+  tmpfs. Do not import upstream's unrelated generic Compose sizing/image defaults.
+- `03b19d5`: retain the fork's existing Renovate policy; do not bind it to an
+  upstream-owner shared preset or broaden automatic update policy.
+- `3e8c09e` and `c81385f`: dependency/lock refreshes, including FastAPI 0.162 and
+  the newer invisible-core tree, are not qualified production runtime upgrades.
+  Retain the documented immutable browser/runtime and test profile. The new
+  Ubuntu/uv image pins in `93ffe3e` target the excluded Ubuntu 26.04 build path;
+  the custom runtime base is already pinned by immutable digest.
+
+No application, adapter, admission or client correction is being omitted from
+the qualified runtime; the upstream fixes above address different dependency
+interfaces/topology. Current runtime health is being verified rather than inferred
+from those exclusions. No production mutation or recovery has been performed.
+
+Verification: selected workflow files match upstream byte-for-byte after newline
+normalization. Removing only `uses:` references makes them identical to the
+pre-maintenance files; all changed action references are exact 40-character
+commit pins. The unchanged upstream `docker/login-action@v4` references remain
+outside that selected pin delta. Actual repository Actions permission is
+`enabled=false`; no workflow was enabled or dispatched. All application/runtime,
+adapter, lock, client and production Compose inputs are unchanged.
+
+Original-endpoint safe GET UUID `cac07c8b-acc1-4068-8e8c-b61059dc48be` returned
+API/target 200 and the expected Example Domain document. Completed request feedback
+is 404; final browser-free readiness is healthy/idle with zero queued operations.
+Docker image `38c5c5c3910d` remains healthy with zero restarts/OOM. Exact production
+Compose, one CPU/2 GiB/no-extra-swap/512 PIDs, private binding/network/DNS,
+non-root/read-only/capability and log protections match the accepted configuration.
+Tini is confirmed PID 1. Prowlarr's actual proxy test returns 200; original
+container/image/start time/restart count, saved host, waitForQueue=true and
+120-second execution budget are unchanged. No client rebuild or changed admission
+requires another held-queue qualification; those paths and the runtime are unchanged.
+No runtime/adapter change requires a fresh Uptodown download in this review.
+
+The former updater-checksum assertion found a separately maintained, newer
+Saturday launcher rather than a solver defect. It now delegates to qualified
+music-maintenance release `2026.11.07.3`, sharing the existing maintenance lock.
+The actual launcher SHA-256 is
+`c7105c12012e45f9a0260e29c04395d6acb21a389a9101e2ea32c36fcce3c478`.
+Inspected implementation selects only manifest `containers`; Byparr/Prowlarr are
+absent from that set and present in `separate_owners` with current image/start
+identities and an observe-only/no-registry-pull contract. The pinned Prowlarr
+Compose still has `pull_policy: never`. Preserve that owner's workflow; the
+updated client runbook records this handoff instead of reinstalling the obsolete
+shell implementation. No unsafe updater condition remains.
+
+Private verification receipt:
+`D:/Artifacts/Byparr/2026-11-09-maintenance/verification.json`.
+Temporary operator script/input: `E:/Temp/byparr-maintenance-20261109`, cleanup
+transaction `cc2c0836f3133a4b1a15807f939b6884`. Original verification process
+83859 completed successfully. The initial operator check stopped at the changed
+updater checksum after a completed safe GET; investigation established the new
+manifest protections, and the final check uses that inspected contract. No service
+replacement or rollback was performed, and no ambiguous operation was replayed.
+
+Debt assessment: source changes only pin existing action references and update
+maintenance/runbook provenance. No application control flow, state owner or
+abstraction changes; no consolidation is required. The source-only selected scope
+needs neither a container build nor a runtime release/redeployment. Existing
+private delivery remains the qualified November 6 image.
+
+Reviewed exact cleanup transaction `cc2c0836f3133a4b1a15807f939b6884` is applied:
+three entries (the two expendable files and task directory), 10075 logical bytes,
+no exclusions/errors. The exact E: root is absent. No Docker staging, test
+container, volume, new image or recovery artifact was created by this review.
+Compact `verification.json`, `browser-proof.json`, `cleanup.json` and the launcher
+preflight receipt remain under the D: evidence directory for maintenance provenance.

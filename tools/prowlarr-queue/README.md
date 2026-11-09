@@ -80,3 +80,16 @@ This fixes Prowlarr's solver boundary; it does not remove unrelated HTTP deadlin
 in external search clients or guarantee unlimited queue latency to those clients.
 Morphe and Telefonillo remain managed by their own tasks; this patch does not
 claim to qualify their independent integrations.
+
+## Updater handoff verified 2026-11-09
+
+The existing Saturday entrypoint now delegates to the separately maintained
+`/opt/music-maintenance/releases/2026.11.07.3/music_maintenance.py apply companions`.
+Its launcher SHA-256 is
+`c7105c12012e45f9a0260e29c04395d6acb21a389a9101e2ea32c36fcce3c478`.
+The reviewed manifest excludes Byparr and Prowlarr from managed `containers` and
+records their qualified images/start times in `separate_owners` as observe-only,
+without replacement or registry pull. The existing maintenance lock is retained.
+Do not reinstall this repository's historical shell updater over that newer
+owner's workflow. Verify its actual manifest and protected-service state during
+future maintenance rather than assuming the old full-script checksum persists.
