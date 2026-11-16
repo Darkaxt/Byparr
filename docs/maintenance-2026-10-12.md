@@ -387,3 +387,64 @@ availability/data-integrity defect or external blocker was found. Production
 remains on the accepted private image; no deployment, restart, recovery or external
 release occurred. This final documentation-only reconciliation leaves all runtime
 evidence applicable and requires no repeated browser qualification.
+
+## Weekly review, 2026-11-16
+
+Authorization: already_authorized weekly maintenance. Origin/custom-post matches
+`6d8852dbe649fe0e1634da0948627685c8e94986` at clean preflight. Freshly fetched
+upstream main remains `c81385f59ec978ef81909a273e514ca6d9ace2a9`: no new commits
+since the November 9 complete selective review. Its recorded integration and
+runtime-dependent exclusions remain applicable. There is no new source patch to
+build, qualify or deploy, and no reason to repeat unchanged runtime/adapter or
+queued-client acceptance suites. Repository Actions remain disabled.
+
+Current review checks original-endpoint safe browser GET, browser-free readiness
+and removal of completed UUID feedback; authenticated image/resource/security/
+routing and Prowlarr identity/settings/pin/proxy verification; current updater's
+separate-owner protections. Read-only operator:
+`E:/Temp/byparr-maintenance-20261116/verify.py`, using existing `tools/remote_ct.py`.
+Its original operations will be observed to completion; no restart, replacement,
+registry update or new browser instance outside ordinary admission is planned.
+Retained verification receipts: `D:/Artifacts/Byparr/2026-11-16-maintenance`.
+Exact scratch cleanup transaction: `34970c81a3bcd4310c79f2827ca56868`.
+Live verification and exact cleanup passed. Only this maintenance record and
+the client runbook changed; application, runtime, adapter, dependency, client
+and production deployment inputs remain untouched.
+
+Fresh original HTTPS request UUID `bec163be-b3ba-41d6-9b6e-287e7e385826`
+returned API/target 200 and the expected Example Domain document. Its completed
+UUID feedback returns 404. Browser-free readiness is healthy with zero queued
+operations; active consumer browser work may continue normally. The accepted
+Byparr image, container/start identity, zero restarts/no OOM, exact production
+Compose, one CPU/2 GiB/no-extra-swap/512 PIDs and security/log/private network/DNS/
+8191 protections are unchanged. Prowlarr's real proxy test returns 200 with its
+original container/image/start identity, saved host, 120-second execution budget
+and waitForQueue=true retained. Its immutable Compose pin and pull_policy remain.
+No client rebuild, admission/runtime/adapter update or new Uptodown qualification
+was necessary for this no-change review. Original verification session 28982
+completed successfully; evidence is saved in `verification.json`.
+
+The independently maintained Saturday launcher now selects qualified music
+maintenance release `2026.11.13.1`, SHA-256
+`a8f8eb93b371497c95dd42676a1d697c964cfe8cae1cf7fc952ffd503ea01d32`.
+Inspected source still selects only managed manifest containers. Byparr/Prowlarr
+are absent from that set and preserved as separate owners with their actual
+qualified images/start identities. No installer, schedule or updater configuration
+was changed; the client runbook records the fresh protected-owner verification.
+
+The initial preflight used an ambiguous PATH Python resolving to SVP's isolated
+embedded interpreter, which could not import the Inspector's sibling theme.py.
+The module exists; resolving and using the shortcut's actual Scoop Python sibling
+restored the existing Inspector CLI. No source repair, environment change, security
+policy rejection or alternate access path was needed. Operator execution used
+that explicit interpreter too. The retained preflight report is diagnostic only.
+
+Exact cleanup transaction `34970c81a3bcd4310c79f2827ca56868` is applied: the two
+reviewed expendable files and their directory were removed (7173 logical bytes),
+with no exclusions, errors or residual root. Compact browser/server/preflight/
+cleanup receipts remain in the D: maintenance evidence folder. No task container,
+volume, image, remote staging or rollback snapshot was created. No production
+restart, deployment, recovery or external release occurred. No current actionable
+availability/data-integrity defect, required repair or external blocker was found.
+The November 6 private release remains healthy and accepted. This no-change
+review needs no formal implementation stage or new qualification/release cycle.

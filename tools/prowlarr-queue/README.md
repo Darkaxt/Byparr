@@ -93,3 +93,10 @@ without replacement or registry pull. The existing maintenance lock is retained.
 Do not reinstall this repository's historical shell updater over that newer
 owner's workflow. Verify its actual manifest and protected-service state during
 future maintenance rather than assuming the old full-script checksum persists.
+
+Reverified 2026-11-16: the same entrypoint now selects release `2026.11.13.1`;
+launcher SHA-256
+`a8f8eb93b371497c95dd42676a1d697c964cfe8cae1cf7fc952ffd503ea01d32`.
+Its managed container selection still excludes Byparr and Prowlarr, and the
+separate-owner image/start identities match production. The real Prowlarr proxy
+test passes with the original pinned image and queue-aware settings unchanged.
